@@ -1,0 +1,114 @@
+{
+  "appName": "Abrikos lottery",
+  "groupName": "abrikos_lottery",
+  "groupId": -1001217685853,
+  "lotteryPercent": 0.98,
+
+  "languages": [
+    {
+      "title": "Русский 🇷🇺",
+      "language_code": "ru"
+    },
+    {
+      "title": "English 🇺🇸",
+      "language_code": "en"
+    }
+  ],
+  "networks": [
+    {
+      "enabled": true,
+      "key": "eth",
+      "api": "mainnet",
+      "api2": "homestad",
+      "walletAddressRegexp" : "^0x[a-fA-F0-9]{40}$",
+      "referralPercent": 0.3,
+      "name": "Ethereum",
+      "coin": "ETH",
+      "prize": 0.1,
+      "chainId": 1,
+      "toFixed": 3,
+      "home": "https://www.ethereum.org",
+      "ownerAddress": "0xF63A30D7df2f2193c922b68e48c2FAb72076250e"
+    },
+    {
+      "enabled": true,
+      "key": "rinkeby",
+      "api": "rinkeby",
+      "walletAddressRegexp" : "^0x[a-fA-F0-9]{40}$",
+      "referralPercent": 0.3,
+      "name": "RINKEBY Ethereum (testnet)",
+      "coin": "ETH",
+      "prize": 1,
+      "chainId": 3,
+      "toFixed": 3,
+      "home": "https://www.rinkeby.io",
+      "faucet": "https://faucet.rinkeby.io",
+      "ownerAddress": "0xF63A30D7df2f2193c922b68e48c2FAb72076250e"
+    },
+    {
+      "enabled": false,
+      "key": "ropsten",
+      "api": "ropsten",
+      "walletAddressRegexp" : "^0x[a-fA-F0-9]{40}$",
+      "referralPercent": 0.3,
+      "name": "ROPSTEN Ethereum (testnet)",
+      "coin": "ETH",
+      "prize": 1,
+      "chainId": 3,
+      "toFixed": 3,
+      "home": "https://ropsten.etherscan.io",
+      "faucet": "https://faucet.ropsten.be",
+      "ownerAddress": "0xF63A30D7df2f2193c922b68e48c2FAb72076250e"
+    },
+    {
+      "enabled": true,
+      "key": "kovan",
+      "api": "kovan",
+      "walletAddressRegexp" : "^0x[a-fA-F0-9]{40}$",
+      "referralPercent": 0.3,
+      "name": "KOVAN Ethereum (testnet)",
+      "coin": "ETH",
+      "prize": 0.1,
+      "toFixed": 6,
+      "chainId": 3,
+      "home": "https://faucet.etherscan.io/",
+      "faucet": "https://faucet.kovan.network/",
+      "ownerAddress": "0xF63A30D7df2f2193c922b68e48c2FAb72076250e"
+    },
+    {
+      "key": "minter-bip",
+      "walletAddressRegexp" : "^Mx[a-fA-F0-9]{40}$",
+      "referralPercent": 0.3,
+      "enabled": true,
+      "name": "Minter BIP",
+      "coin": "BIP",
+      "coinFee": "BIP",
+      "prize": 1000,
+      "home": "https://www.minter.network",
+      "chainId": 1,
+      "explorerUrl": "https://explorer.minter.network",
+      "explorerApiUrl": "https://explorer-api.minter.network/api/v1",
+      "apiUrl": "https://api.minter.stakeholder.space/",
+      "centrifuge": "wss://explorer-rtm.minter.network/connection/websocket",
+      "ownerAddress": "Mx389a3ec7916a7c40928ab89248524f67a834eab7"
+    },
+    {
+      "enabled": true,
+      "key": "minter-mnt",
+      "walletAddressRegexp" : "^Mx[a-fA-F0-9]{40}$",
+      "referralPercent": 0.3,
+      "name": "Minter MNT (testnet)",
+      "coin": "MNT",
+      "coinFee": "MNT",
+      "prize": 200,
+      "home": "https://www.minter.network",
+      "faucet": "https://telegram.me/mnt_crane_bot",
+      "chainId": 2,
+      "explorerUrl": "https://testnet.explorer.minter.network",
+      "explorerApiUrl": "https://explorer-api.testnet.minter.network/api/v1",
+      "apiUrl": "https://api.testnet.minter.stakeholder.space/",
+      "centrifuge": "wss://explorer-rtm.testnet.minter.network/connection/websocket",
+      "ownerAddress": "Mx389a3ec7916a7c40928ab89248524f67a834eab7"
+    }
+  ]
+}

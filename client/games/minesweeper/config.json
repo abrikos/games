@@ -1,0 +1,20 @@
+{
+  "levels": [
+    {
+      "cols": 8,
+      "rows": 8,
+      "mines": 10
+    },
+    {
+      "cols": 16,
+      "rows": 16,
+      "mines": 40
+    },
+    {
+      "cols": 32,
+      "rows": 16,
+      "mines": 99
+    }
+  ],
+  "cheater": false
+}
