@@ -1,11 +1,10 @@
-import {Component} from "react";
 import axios from "axios";
 
 
 class API {
 
-    isAuth = async () => {
-        const auth = await this.postData('/isAuth');
+    authenticatedUser = async () => {
+        const auth = await this.postData('/authenticatedUser');
         return auth.authenticated;
     };
 
@@ -65,15 +64,6 @@ class API {
             if (!e.response){
 
                 return {error: 500, message: e.toJSON().message}
-            }
-            switch (e.response.status) {
-                case 401:
-                    //console.error('FETCH ERROR', path);
-                    break;
-                case 502:
-                    this.serverOnline = false;
-                    break;
-                default:
             }
             return {error: e.response.status, message:e.response.statusText}
         }

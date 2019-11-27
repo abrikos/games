@@ -1,9 +1,15 @@
+import User from "server/db/models/Model-User";
+import Referral from "server/db/models/Model-Referral";
+import Message from "server/db/models/Model-Message";
+import Filler from "server/db/models/Model-Filler";
+
 const mongoose = require("mongoose");
 // подключение
-mongoose.connect("mongodb://localhost:27017/abrikos", {useNewUrlParser: true});
+mongoose.connect("mongodb://localhost:27017/games", {useNewUrlParser: true, useUnifiedTopology: true});
 //mongoose.connect("mongodb://108.160.143.119:27017/minterEarth", {useNewUrlParser: true});
 
-module.exports = {
+export default {
+
     Types: mongoose.Types,
     connection: mongoose.connection,
     checkOwnPassport: function (model, passport) {
@@ -15,9 +21,6 @@ module.exports = {
         if (!cookie.length) return false;
         return cookie.indexOf(model.cookieId) !== -1;
     },
-    User: require('server/db/models/User-Model'),
-    Wallet: require('server/db/models/Wallet-Model'),
-    Transaction: require('server/db/models/Transaction-Model'),
-    Lottery: require('server/db/models/Lottery-Model'),
-    Payment: require('server/db/models/Payment-Model'),
+    User, Referral, Message, Filler
+
 };

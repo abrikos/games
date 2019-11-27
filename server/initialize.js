@@ -1,24 +1,15 @@
-import {Configurator} from "server/lib/Configurator";
-const mongoose = require('server/db/mongoose');
+import Mongoose from "server/db/mongoose";
+
 async function init() {
-    //await mongoose.Wallet.deleteMany({});
-    //await mongoose.Lottery.deleteMany({});
-    //await mongoose.Transaction.deleteMany({});
-    //await mongoose.Payment.deleteMany({});
-    for (const network of Configurator.getKeys()) {
-        const App = new Configurator(network);
-        const l = await mongoose.Lottery.findOne({finisTime: 0, network});
-        //if (!l) await Application.lotteryCreate();
+    //Mongoose.User.find()    .then(g=>console.log(g))
 
-        const users = await mongoose.User.find().populate('wallets')
+    Mongoose.Referral.deleteMany({}).then(console.log)
+    Mongoose.User.deleteMany({}).then(console.log)
+    Mongoose.Group.deleteMany({}).then(console.log);
+    Mongoose.Purchase.deleteMany({}).then(console.log);
+    Mongoose.Message.deleteMany({}).then(console.log);
 
-        for (const user of users) {
-            if (!user.getWallet(network)) {
-                await App.createWallet(user)
-            }
-        }
-    }
-    mongoose.connection.close()
+    //Mongoose.connection.close()
 }
 
 init()

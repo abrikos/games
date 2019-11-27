@@ -1,4 +1,3 @@
-import BotProcess from 'server/lib/bot-process';
 import CronProcess from 'server/lib/cron-process';
 
 const TelegramBot = require('node-telegram-bot-api');
@@ -24,5 +23,5 @@ if (process.env.PROXY_SOCKS5_HOST && parseInt(process.env.PROXY_SOCKS5_PORT)) {
     }
 }
 const bot = new TelegramBot(process.env.BOT_TOKEN, options);
-BotProcess.run(bot);
+//BotProcess.run(bot);
 CronProcess.run(bot);

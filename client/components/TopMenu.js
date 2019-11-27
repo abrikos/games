@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
 import PropTypes from 'prop-types';
-import {Collapse, Dropdown, DropdownItem, DropdownMenu, DropdownToggle, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, UncontrolledDropdown,} from "reactstrap";
+import {Collapse, DropdownItem, DropdownMenu, DropdownToggle, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, UncontrolledDropdown,} from "reactstrap";
 import {A, navigate, usePath} from "hookrouter";
+import {t} from "client/components/Translator";
 
 export default function TopMenu(props) {
     const [menuPulled, pullMenu] = useState(false);
@@ -14,12 +15,13 @@ export default function TopMenu(props) {
     return (
         <Navbar color="dark" dark expand="md">
             <NavbarBrand href='#' onClick={e => navigate('/')} className='mr-auto'>
-                {props.title}
+                {t('Home purchases')}
             </NavbarBrand>
             <NavbarToggler onClick={e => pullMenu(!menuPulled)}/>
             <Collapse isOpen={menuPulled} navbar>
                 <Nav className="ml-auto" navbar>
                     {props.items.map((item, i) => {
+                        if(item.hidden) return <span key={i}></span>;
                         return item.items ? <UncontrolledDropdown nav inNavbar key={i}>
                                 <DropdownToggle nav caret>
                                     {item.label}
@@ -35,7 +37,7 @@ export default function TopMenu(props) {
                             </UncontrolledDropdown>
                             :
                             <NavItem key={i} active={isActive(item.path)}>
-                                <A href={item.path} className={'nav-link'}>{item.label}</A>
+                                <A href={item.path || '#'} onClick={item.onClick} className={'nav-link'}>{item.label}</A>
                             </NavItem>
                     })}
 
