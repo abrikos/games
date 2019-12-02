@@ -138,10 +138,8 @@
     "workbox-webpack-plugin": "3.6.3"
   },
   "scripts": {
-    "init": "NODE_PATH=. node  -r esm server/initialize.js",
-    "bot": "NODE_PATH=. nodemon  -r esm server/bot.js",
     "start": "NODE_PATH=. node scripts/start.js",
-    "server": "NODE_PATH=. nodemon server/server.js",
+    "server": "NODE_PATH=. nodemon -r esm server/server.js",
     "admin": "node scripts/start-admin.js",
     "websocket": "node server/websocket.js",
     "build": "GENERATE_SOURCEMAP=false NODE_PATH=. node scripts/build.js",
