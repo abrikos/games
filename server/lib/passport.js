@@ -102,6 +102,7 @@ module.exports = {
     checkSignature,
 
     isLogged: function (req, res, next) {
+
         if (req.session.passport) {
             //console.log('AUTHENTICATED')
             req.session.userId = req.session.passport.user._id

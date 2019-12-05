@@ -31,12 +31,10 @@ export default function FillerField(props) {
     }
 
     useEffect(() => {
-        props.api(`/filler/view/${props.id}`)
+        props.api(`/filler/${props.id}/view`)
             .then(res => {
-                console.log('zzzzzzzz', res.turn)
-                setTurn(res.turn);
-                setFiller(res.filler);
-                setCells(res.filler.field.cells)
+                setFiller(res);
+                setCells(res.cells)
             })
 
     }, []);
@@ -60,9 +58,11 @@ export default function FillerField(props) {
     }
 
     function cellClick(e) {
-
         props.api(`/filler/${filler.id}/click/${e.target.getAttribute('index')}`)
-            .then(setFiller)
+            .then(res=>{
+                setFiller(res);
+                setCells(res.cells)
+            })
 
     }
 
@@ -72,7 +72,7 @@ export default function FillerField(props) {
 
     function rows() {
         const table = [];
-        for (let row = 0; row < filler.field.rows; row++) {
+        for (let row = 0; row < filler.rows; row++) {
             const row = <tr key={row}>{cells.filter(c => c.row === row)
                 .map(c => <td key={c.index} index={c.index} style={{backgroundColor: c.fill, opacity: getOpacity(c)}} onClick={cellClick} onMouseOver={mouseOver} onMouseOut={mouseOut}>
                     {c.available}
