@@ -77,22 +77,26 @@ module.exports.controller = function (app) {
 
     });
 
-    app.post('/api/filler/create', passportLib.isLogged, (req, res) => {
+
+    app.post('/api/filler/levels',  (req, res) => {
+        res.send(Mongoose.Filler.levels);
+    });
+
+    app.post('/api/filler/create/:level', passportLib.isLogged, (req, res) => {
+        const level = Mongoose.Filler.levels[req.params.level*1];
+        if(!level) return res.sendStatus(406);
         Mongoose.User.findById(req.session.userId)
             .catch(error => res.send({error: 500, message: error.message}))
             .then(player => {
-                const rows = 20;
-                const cols = 20;
                 const cells = [];
-                for (let index = 0; index < rows * cols; index++) {
-                    let row = Math.floor(index / cols);
-                    let col = index % cols;
-                    const colors = ['green', 'red', 'blue'];
-                    const fill = colors[Math.floor(Math.random() * colors.length)];
+                for (let index = 0; index < level.rows * level.cols; index++) {
+                    let row = Math.floor(index / level.cols);
+                    let col = index % level.cols;
+                    const fill = level.colors[Math.floor(Math.random() * level.colors.length)];
                     cells.push({index, row, col, fill})
                 }
                 cells[0].available = cells[0].fill;
-                Mongoose.Filler.create({player, rows, cols, cells})
+                Mongoose.Filler.create({player, cells, ...level})
                     .then(filler =>{
                         filler.fill(cells[0]);
                         filler.save()

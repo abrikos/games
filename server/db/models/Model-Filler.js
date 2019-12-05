@@ -30,8 +30,7 @@ const modelSchema = new Schema({
     });
 
 
-
-modelSchema.methods.capture = function(cell){
+modelSchema.methods.capture = function (cell) {
     cell.captured = 1;
     for (const near of this.findNearCells(cell)) {
         if (near.captured || near.near) continue;
@@ -50,7 +49,14 @@ modelSchema.methods.capture = function(cell){
     }
 };
 
-modelSchema.methods.available = function(cell) {
+const colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow'];
+modelSchema.statics.levels = [
+    {rows: 10, cols: 10, colors: colors.slice(0, 4)},
+    {rows: 20, cols: 20, colors: colors.slice(0, 5)},
+    {rows: 30, cols: 30, colors: colors.slice(0, 6)},
+];
+
+modelSchema.methods.available = function (cell) {
     cell.available = cell.fill;
     //updateCell(cell);
     for (const test of this.findNearCells(cell)) {
@@ -59,7 +65,7 @@ modelSchema.methods.available = function(cell) {
     }
 };
 
-modelSchema.methods.findNearCells = function(cell){
+modelSchema.methods.findNearCells = function (cell) {
     const coordinates = [[-1, 0], [0, -1], [0, 1], [1, 0]];
     const found = [];
     for (const xy of coordinates) {
@@ -69,7 +75,7 @@ modelSchema.methods.findNearCells = function(cell){
     return found;
 };
 
-modelSchema.methods.fill = function(cell){
+modelSchema.methods.fill = function (cell) {
     if (cell.captured) return;
     for (const h of this.cells.filter(c => c.available === cell.fill)) {
         this.capture(h);
