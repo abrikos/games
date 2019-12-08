@@ -89,6 +89,17 @@ modelSchema.methods.fill = function (cell) {
 };
 
 
+modelSchema.virtual('params')
+    .get(function () {
+        const cellWidth= 20;
+        const WIDTH= cellWidth * this.cols;
+        const HEIGHT = cellWidth * this.rows;
+        const viewBox =  [(WIDTH) / -2, (HEIGHT) / -2, WIDTH + this.cols, HEIGHT + this.rows];
+
+        const transform =  `translate(${-WIDTH / 2 + cellWidth / 2 + .5} ${-HEIGHT / 2 + cellWidth / 2 + .5})`;
+        return {viewBox, transform, cellWidth}
+    });
+
 modelSchema.virtual('link')
     .get(function () {
         return `${process.env.SITE}/filler/${this.id}`

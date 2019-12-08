@@ -5,7 +5,7 @@ import {navigate} from "hookrouter";
 
 export default function AcceptFilter(props) {
     function acceptGame() {
-        props.api('/filler/accept/'+props.filler.id)
+        props.api(`/filler/${props.filler.id}/accept`)
             .then(filler=>{
                 navigate(`/filler/${filler.id}`)
             })

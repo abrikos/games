@@ -1,4 +1,5 @@
 import Mongoose from "server/db/mongoose";
+
 const passportLib = require('server/lib/passport');
 const passport = require('passport');
 const logger = require('logat');
@@ -14,7 +15,7 @@ module.exports.controller = function (app) {
                 if (filler.player.toString() === req.session.userId) filler.turn = 'player';
                 if (filler.opponent && filler.opponent.toString() === req.session.userId) filler.turn = 'opponent';
                 filler.save()
-                    .then(f=>res.send(f))
+                    .then(f => res.send(f))
             })
 
     });
@@ -24,7 +25,8 @@ module.exports.controller = function (app) {
             .catch(error => res.send({error: 500, message: error.message}))
             .then(filler => {
                 if (filler.opponent) return res.sendStatus(403);
-                filler.turn = filler.opponent = req.session.userId;
+                filler.opponent = req.session.userId;
+                filler.turn = 'opponent';
                 filler.save();
                 res.send(filler)
             })
@@ -59,9 +61,9 @@ module.exports.controller = function (app) {
         Mongoose.Filler.findById(req.params.id)
             .catch(error => res.send({error: 500, message: error.message}))
             .then(filler => {
-                if(!filler[filler.turn]) filler.turn='player';
-                //if (filler[filler.turn].toString() !== req.session.userId.toString()) return res.send({error: 500, message: 'Not your turn'});
-                const cell = filler.cells[req.params.index];
+                if (!filler.opponent) return res.send({error: 500, message: 'No opponent'});
+                if (filler[filler.turn].toString() !== req.session.userId.toString()) return res.send({error: 500, message: 'Not your turn'});
+                const cell = filler.cells.id(req.params.index);
                 if (!cell) return res.sendStatus(406);
                 if (cell.captured) return res.sendStatus(406);
                 filler.fill(cell);
@@ -69,7 +71,6 @@ module.exports.controller = function (app) {
                 filler.turn = filler.turn === 'opponent' ? 'player' : 'opponent';
                 filler.save()
                     .then(f => {
-                        console.log(f.cells[40])
                         res.send(f)
                     })
 
@@ -78,13 +79,13 @@ module.exports.controller = function (app) {
     });
 
 
-    app.post('/api/filler/levels',  (req, res) => {
+    app.post('/api/filler/levels', (req, res) => {
         res.send(Mongoose.Filler.levels);
     });
 
     app.post('/api/filler/create/:level', passportLib.isLogged, (req, res) => {
-        const level = Mongoose.Filler.levels[req.params.level*1];
-        if(!level) return res.sendStatus(406);
+        const level = Mongoose.Filler.levels[req.params.level * 1];
+        if (!level) return res.sendStatus(406);
         Mongoose.User.findById(req.session.userId)
             .catch(error => res.send({error: 500, message: error.message}))
             .then(player => {
@@ -97,10 +98,10 @@ module.exports.controller = function (app) {
                 }
                 cells[0].available = cells[0].fill;
                 Mongoose.Filler.create({player, cells, ...level})
-                    .then(filler =>{
+                    .then(filler => {
                         filler.fill(cells[0]);
                         filler.save()
-                            .then(f=>res.send(f))
+                            .then(f => res.send(f))
 
                     })
             })
