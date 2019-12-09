@@ -5,6 +5,8 @@ const passport = require('passport');
 const logger = require('logat');
 const moment = require('moment');
 
+//Mongoose.Filler.deleteMany().then(console.log)
+
 module.exports.controller = function (app) {
 
     app.post('/api/filler/:id/view', passportLib.isLogged, (req, res) => {
@@ -27,6 +29,10 @@ module.exports.controller = function (app) {
                 if (filler.opponent) return res.sendStatus(403);
                 filler.opponent = req.session.userId;
                 filler.turn = 'opponent';
+                const cells = filler.cells;
+                cells[cells.length-1].availableFill = cells[cells.length-1].fill;
+                cells[cells.length-1].availableUser = req.session.userId;
+                filler.fill(cells[cells.length-1]);
                 filler.save();
                 res.send(filler)
             })
@@ -59,10 +65,12 @@ module.exports.controller = function (app) {
 
     app.post('/api/filler/:id/click/:index', passportLib.isLogged, (req, res) => {
         Mongoose.Filler.findById(req.params.id)
+            .populate('opponent')
             .catch(error => res.send({error: 500, message: error.message}))
+
             .then(filler => {
                 if (!filler.opponent) return res.send({error: 500, message: 'No opponent'});
-                if (filler[filler.turn].toString() !== req.session.userId.toString()) return res.send({error: 500, message: 'Not your turn'});
+                if (filler[filler.turn]._id.toString() !== req.session.userId.toString()) return res.send({error: 500, message: 'Not your turn'});
                 const cell = filler.cells.id(req.params.index);
                 if (!cell) return res.sendStatus(406);
                 if (cell.captured) return res.sendStatus(406);
@@ -96,8 +104,9 @@ module.exports.controller = function (app) {
                     const fill = level.colors[Math.floor(Math.random() * level.colors.length)];
                     cells.push({index, row, col, fill})
                 }
-                cells[0].available = cells[0].fill;
-                Mongoose.Filler.create({player, cells, ...level})
+                cells[0].availableFill = cells[0].fill;
+                cells[0].availableUser = req.session.userId;
+                Mongoose.Filler.create({player, cells, turn:'player', ...level})
                     .then(filler => {
                         filler.fill(cells[0]);
                         filler.save()

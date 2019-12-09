@@ -7,8 +7,9 @@ const cellSchema = new Schema({
     index: Number,
     row: Number,
     col: Number,
-    captured: Number,
-    available: String,
+    captured: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+    availableFill: String,
+    availableUser: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     fill: String
 });
 
@@ -28,10 +29,16 @@ const modelSchema = new Schema({
         // see http://stackoverflow.com/q/13133911/488666
         toJSON: {virtuals: true}
     });
+const colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow'];
+modelSchema.statics.levels = [
+    {rows: 10, cols: 10, colors: colors.slice(0, 4)},
+    {rows: 20, cols: 20, colors: colors.slice(0, 5)},
+    {rows: 30, cols: 30, colors: colors.slice(0, 6)},
+];
 
 
 modelSchema.methods.capture = function (cell) {
-    cell.captured = 1;
+    cell.captured = this[this.turn];
     for (const near of this.findNearCells(cell)) {
         if (near.captured || near.near) continue;
         near.near = 1;
@@ -43,24 +50,18 @@ modelSchema.methods.capture = function (cell) {
         //const test = cells.find(c => c.row === cell.row + xy[0] && c.col === cell.col + xy[1]);
         if (test.captured) continue;
         if (cell.fill === test.fill) {
-            test.captured = 1;
+            test.captured = this[this.turn];
             this.capture(test)
         }
     }
 };
 
-const colors = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow'];
-modelSchema.statics.levels = [
-    {rows: 10, cols: 10, colors: colors.slice(0, 4)},
-    {rows: 20, cols: 20, colors: colors.slice(0, 5)},
-    {rows: 30, cols: 30, colors: colors.slice(0, 6)},
-];
-
 modelSchema.methods.available = function (cell) {
-    cell.available = cell.fill;
+    cell.availableFill = cell.fill;
+    cell.availableUser = this[this.turn];
     //updateCell(cell);
     for (const test of this.findNearCells(cell)) {
-        if (test.available || test.fill !== cell.fill) continue;
+        if (test.availableFill || test.fill !== cell.fill) continue;
         this.available(test);
     }
 };
@@ -77,13 +78,13 @@ modelSchema.methods.findNearCells = function (cell) {
 
 modelSchema.methods.fill = function (cell) {
     if (cell.captured) return;
-    for (const h of this.cells.filter(c => c.available === cell.fill)) {
+    for (const h of this.cells.filter(c => c.availableFill === cell.fill && c.availableUser.toString() === this[this.turn]._id.toString())) {
         this.capture(h);
     }
     for (const near of this.cells.filter(c => c.near)) {
         this.available(near)
     }
-    for (const cap of this.cells.filter(c => c.captured)) {
+    for (const cap of this.cells.filter(c => c.captured && c.captured.toString() === this[this.turn]._id.toString())) {
         cap.fill = cell.fill;
     }
 };
@@ -91,12 +92,12 @@ modelSchema.methods.fill = function (cell) {
 
 modelSchema.virtual('params')
     .get(function () {
-        const cellWidth= 20;
-        const WIDTH= cellWidth * this.cols;
+        const cellWidth = 20;
+        const WIDTH = cellWidth * this.cols;
         const HEIGHT = cellWidth * this.rows;
-        const viewBox =  [(WIDTH) / -2, (HEIGHT) / -2, WIDTH + this.cols, HEIGHT + this.rows];
+        const viewBox = [(WIDTH) / -2, (HEIGHT) / -2, WIDTH + this.cols, HEIGHT + this.rows];
 
-        const transform =  `translate(${-WIDTH / 2 + cellWidth / 2 + .5} ${-HEIGHT / 2 + cellWidth / 2 + .5})`;
+        const transform = `translate(${-WIDTH / 2 + cellWidth / 2 + .5} ${-HEIGHT / 2 + cellWidth / 2 + .5})`;
         return {viewBox, transform, cellWidth}
     });
 

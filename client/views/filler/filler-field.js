@@ -17,50 +17,46 @@ export default function FillerField(props) {
     }
 
     const [filler, setFiller] = useState();
-    const [cells, setCells] = useState();
-    const [turn, setTurn] = useState();
+    const [cells, setCells] = useState([]);
 
     //const [cells, updateCell] = useReducer(reducer, Filler.cells);
-
-    function updateCell(cell) {
-        if (turn === 'guest') return;
-        const cls = cells.map(c => c);
-        cls[cell.index] = cell;
-        setCells(cls)
-    }
 
     useEffect(() => {
         props.api(`/filler/${props.id}/view`)
             .then(res => {
                 setFiller(res);
-                setCells(res.opponent.id === props.authenticatedUser.id ? res.cells.reverse() : res.cells)
+                setCells(reverseCells(res))
             })
 
     }, []);
 
+    function reverseCells(res) {
+        return res.opponent && res.opponent.id === props.authenticatedUser.id ? res.cells.reverse() : res.cells
+    }
 
     function mouseOut(e) {
+        const cls = [];
         for (const c of cells) {
             delete c.hover;
-            updateCell(c)
+            cls.push(c)
         }
-
+        setCells(cls)
     }
 
     function mouseOver(e) {
         const cell = cells.find(c => c._id === e.target.getAttribute('_id'));
-
-        for (const h of cells.filter(c => c.available === cell.fill)) {
+        const cls = cells.map(c => c);
+        for (const h of cls.filter(c => c.availableFill === cell.fill && c.availableUser === props.authenticatedUser._id)) {
             h.hover = 1;
-            updateCell(h)
         }
+        setCells(cls)
     }
 
     function cellClick(e) {
         props.api(`/filler/${filler.id}/click/${e.target.getAttribute('_id')}`)
             .then(res => {
                 setFiller(res);
-                setCells(res.cells)
+                setCells(reverseCells(res))
             })
 
     }
@@ -71,16 +67,13 @@ export default function FillerField(props) {
 
     function rows() {
         const table = [];
-        /*for (let row = 0; row < filler.rows; row++) {
+        for (let row = 0; row < filler.rows; row++) {
             const row = <tr key={row}>{cells.filter(c => c.row === row)
-                .map(c => <td key={c.index} id={c._id} style={{backgroundColor: c.fill, opacity: getOpacity(c)}} onClick={cellClick} onMouseOver={mouseOver} onMouseOut={mouseOut}>
-                    {c.available}
+                .map(c => <td key={c.index} _id={c._id} style={{backgroundColor: c.fill, opacity: getOpacity(c)}} onClick={cellClick} onMouseOver={mouseOver} onMouseOut={mouseOut}>
+                    {c.availableUser}
                 </td>)}
             </tr>;
             table.push(row)
-        }*/
-        for(let i= 0; i < cells.length; i++){
-
         }
         return table;
     }
@@ -89,11 +82,10 @@ export default function FillerField(props) {
         let row = Math.floor(i / filler.cols);
         let col = i % filler.cols;
         const r = {x: col * filler.params.cellWidth - filler.params.cellWidth / 2 + col, y: row * filler.params.cellWidth - filler.params.cellWidth / 2 + row, width: filler.params.cellWidth, height: filler.params.cellWidth};
-        console.log(row, col)
         return r;
     }
 
-    if (!cells) return <Loader/>;
+    if (!filler) return <Loader/>;
     return <div>
         {filler.player.first_name} vs {filler.opponent ? filler.opponent.name : props.authenticatedUser.id === filler.player.id ? '...' : <span>{t('You')} <AcceptFiller filler={filler} {...props}/></span>}
         {/*<table id={'filler-table'}>
@@ -107,7 +99,7 @@ export default function FillerField(props) {
             style={style}
         >
             <g transform={filler.params.transform}>
-                {cells.map((c, i) => <rect key={c.index} onClick={cellClick} onMouseOver={mouseOver} onMouseOut={mouseOut} fillOpacity={getOpacity(c)} {...c} {...coordinates(c, i)}/>)}
+                {cells.map((c, i) => <rect key={i} onClick={cellClick} onMouseOver={mouseOver} onMouseOut={mouseOut} fillOpacity={getOpacity(c)} fill={c.fill} _id={c._id} {...coordinates(c, i)}/>)}
             </g>
         </svg>
     </div>
