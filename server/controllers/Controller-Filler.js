@@ -30,16 +30,18 @@ module.exports.controller = function (app) {
                 filler.opponent = req.session.userId;
                 filler.turn = 'opponent';
                 const cells = filler.cells;
-                cells[cells.length-1].availableFill = cells[cells.length-1].fill;
-                cells[cells.length-1].availableUser = req.session.userId;
-                filler.fill(cells[cells.length-1]);
+                const cell = cells[cells.length - 1];
+                cell.availableFill = cell.fill;
+                cell.availableUser = req.session.userId;
+                filler.fill(cell);
+                filler.lastColor = cell.fill;
                 filler.save();
                 res.send(filler)
             })
     });
 
     app.post('/api/filler/available', (req, res) => {
-        Mongoose.Filler.find({lastCell: 0, opponent: null})
+        Mongoose.Filler.find({opponent: null})
             .sort({createdAt: -1})
             .populate('player')
             .catch(error => res.send({error: 500, message: error.message}))
@@ -72,11 +74,25 @@ module.exports.controller = function (app) {
                 if (!filler.opponent) return res.send({error: 500, message: 'No opponent'});
                 if (filler[filler.turn]._id.toString() !== req.session.userId.toString()) return res.send({error: 500, message: 'Not your turn'});
                 const cell = filler.cells.id(req.params.index);
+                if (cell.availableUser.toString() !== filler[filler.turn]._id.toString()) return res.send({error: 500, message: 'Not your cell'});
+                if (cell.lastColor === cell.fill) return res.send({error: 500, message: 'Color abandoned'});
                 if (!cell) return res.sendStatus(406);
                 if (cell.captured) return res.sendStatus(406);
                 filler.fill(cell);
-                filler.lastField = req.params.index;
-                filler.turn = filler.turn === 'opponent' ? 'player' : 'opponent';
+                filler.lastColor = cell.fill;
+                filler.turn = (filler.turn === 'opponent') ? 'player' : 'opponent';
+                throw "HOW TO MAKE SKIP TURN when no moves";
+                for (const c of filler.cells.filter(c1 => c1.fill === cell.fill && c1.availableUser.toString()===filler[filler.turn]._id.toString())) {
+                    c.availableUser = null;
+                }
+
+                const available = filler.cells.filter(c=>c.availableUser.toString()===filler[filler.turn]._id.toString());
+                logger.info(available)
+                if(!available.length){
+                    filler.turn = (filler.turn === 'opponent') ? 'player' : 'opponent';
+                    filler.message = 'NO VARIANTS'
+                }
+
                 filler.save()
                     .then(f => {
                         res.send(f)
@@ -104,11 +120,23 @@ module.exports.controller = function (app) {
                     const fill = level.colors[Math.floor(Math.random() * level.colors.length)];
                     cells.push({index, row, col, fill})
                 }
+
+                cells[0].fill = 'red';
+                cells[1].fill = 'red';
+                cells[2].fill = 'blue';
+                cells[level.cols].fill = 'blue';
+                cells[level.cols + 1].fill = 'blue';
+                cells[level.cols *level.rows- 2].fill = 'blue';
+
+
+
                 cells[0].availableFill = cells[0].fill;
                 cells[0].availableUser = req.session.userId;
-                Mongoose.Filler.create({player, cells, turn:'player', ...level})
+                const lastColor = cells[0].fill;
+                Mongoose.Filler.create({player, cells, lastColor, turn: 'player', ...level})
                     .then(filler => {
                         filler.fill(cells[0]);
+
                         filler.save()
                             .then(f => res.send(f))
 

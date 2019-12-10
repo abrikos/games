@@ -10,14 +10,15 @@ const cellSchema = new Schema({
     captured: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     availableFill: String,
     availableUser: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-    fill: String
+    fill: String,
+    message: String
 });
 
 const modelSchema = new Schema({
         cells: {type: [cellSchema], required: true},
         rows: Number,
         cols: Number,
-        lastCell: {type: Number, default: 0},
+        lastColor: {type: String},
         player: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: [true, 'Player required']},
         opponent: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
         turn: {type: String, enum: ['player', 'opponent'], default: "player"},

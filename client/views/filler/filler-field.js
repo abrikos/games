@@ -18,6 +18,7 @@ export default function FillerField(props) {
 
     const [filler, setFiller] = useState();
     const [cells, setCells] = useState([]);
+    const [cell, setCell] = useState({});
 
     //const [cells, updateCell] = useReducer(reducer, Filler.cells);
 
@@ -45,6 +46,8 @@ export default function FillerField(props) {
 
     function mouseOver(e) {
         const cell = cells.find(c => c._id === e.target.getAttribute('_id'));
+        //if (e.target.getAttribute('fill') === filler.lastColor) return;
+        setCell(cell)
         const cls = cells.map(c => c);
         for (const h of cls.filter(c => c.availableFill === cell.fill && c.availableUser === props.authenticatedUser._id)) {
             h.hover = 1;
@@ -53,6 +56,9 @@ export default function FillerField(props) {
     }
 
     function cellClick(e) {
+        const cell = cells.find(c => c._id === e.target.getAttribute('_id'));
+        //if (e.target.getAttribute('fill') === filler.lastColor) return;
+        if (!cell.availableFill) return;
         props.api(`/filler/${filler.id}/click/${e.target.getAttribute('_id')}`)
             .then(res => {
                 setFiller(res);
@@ -61,10 +67,7 @@ export default function FillerField(props) {
 
     }
 
-    function getOpacity(cell) {
-        return cell.captured || cell.hover ? 1 : .4
-    }
-
+/*
     function rows() {
         const table = [];
         for (let row = 0; row < filler.rows; row++) {
@@ -77,6 +80,7 @@ export default function FillerField(props) {
         }
         return table;
     }
+*/
 
     function coordinates(c, i) {
         let row = Math.floor(i / filler.cols);
@@ -87,20 +91,27 @@ export default function FillerField(props) {
 
     if (!filler) return <Loader/>;
     return <div>
+
         {filler.player.first_name} vs {filler.opponent ? filler.opponent.name : props.authenticatedUser.id === filler.player.id ? '...' : <span>{t('You')} <AcceptFiller filler={filler} {...props}/></span>}
+
+        <strong className="float-right">{filler.message}</strong>
         {/*<table id={'filler-table'}>
             <tbody>
             {rows()}
             </tbody>
         </table>*/}
+
         <svg
             id={'filler-field'}
             viewBox={filler.params.viewBox}
             style={style}
         >
             <g transform={filler.params.transform}>
-                {cells.map((c, i) => <rect key={i} onClick={cellClick} onMouseOver={mouseOver} onMouseOut={mouseOut} fillOpacity={getOpacity(c)} fill={c.fill} _id={c._id} {...coordinates(c, i)}/>)}
+                {cells.map((c, i) => <rect key={i} onClick={cellClick} onMouseOver={mouseOver} onMouseOut={mouseOut} fill={c.fill} _id={c._id} {...coordinates(c, i)} className={`${c.captured ? 'captured' : ''} ${c.hover ? 'hover' : ''}`}/>)}
             </g>
         </svg>
+        {filler.lastColor} {filler.turn}
+        <hr/>
+        {JSON.stringify(cell)}
     </div>
 }
