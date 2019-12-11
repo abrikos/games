@@ -9,16 +9,16 @@ const app = express();
 const passport = require('passport');
 const mongoose = require("mongoose");
 const MongoStore = require('connect-mongo')(session);
-const fileUpload = require('express-fileupload');
+//const fileUpload = require('express-fileupload');
 const cors = require('cors');
 const fs = require('fs');
-require('dotenv').config();
+
 
 
 
 
 app.use(cors())
-app.use(fileUpload());
+//app.use(fileUpload());
 app.use(passport.initialize());
 app.use(passport.session());
 

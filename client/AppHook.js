@@ -8,15 +8,51 @@ import ServerError from "client/service/server-error";
 
 
 export default function App() {
+    let websocket;
+    let wsOnMessage;
+
+    function start() {
+        websocket = new WebSocket(`ws://${window.location.hostname}/ws2`);
+        websocket.onopen = function () {
+            console.log('WS connected!');
+        };
+        if(wsOnMessage) websocket.onmessage = wsOnMessage;
+        websocket.onclose = function () {
+            //console.log('WS closed!');
+            //reconnect now
+            check();
+        };
+    }
+
+    function check() {
+        if (!websocket || websocket.readyState === 3) start();
+    }
+
+
+    start();
+
+    setInterval(check, 5000);
     const [alert, setAlert] = useState({isOpen: false});
     const [authenticatedUser, setAuth] = useState(false)
     const [loading, setLoading] = useState(false)
     const [errorPage, setErrorPage] = useState(false)
     const params = {
+        websocket,
         errorPage,
         loading,
         authenticatedUser,
         alert,
+        onWsMessage(func){
+            wsOnMessage = func;
+            websocket.onmessage = func;
+        },
+        ws(data) {
+            if (websocket.readyState !== 1) {
+                websocket = new WebSocket(`ws://${window.location.hostname}/ws`);
+            }
+            websocket.send(JSON.stringify(data))
+        },
+
         setAlert: (response) => {
             const color = response.error ? 'danger' : 'success';
             setAlert({isOpen: true, children: response.message, color})
@@ -41,15 +77,21 @@ export default function App() {
             return res;
         },
 
-        onError(res){
-            switch(res.error){
-                case 403: setErrorPage(<AccessDenied/>); break;
-                case 404: setErrorPage(<NotFound/>); break;
-                default: setErrorPage(<ServerError {...res}/>); break;
+        onError(res) {
+            switch (res.error) {
+                case 403:
+                    setErrorPage(<AccessDenied/>);
+                    break;
+                case 404:
+                    setErrorPage(<NotFound/>);
+                    break;
+                default:
+                    setErrorPage(<ServerError {...res}/>);
+                    break;
             }
         },
 
-        isLoading(on){
+        isLoading(on) {
             setLoading(on)
         },
 

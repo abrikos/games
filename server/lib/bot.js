@@ -1,9 +1,7 @@
 import CronProcess from 'server/lib/cron-process';
-
 const TelegramBot = require('node-telegram-bot-api');
 const Agent = require('socks5-https-client/lib/Agent');
 require('dotenv').config()
-
 
 const options = {
     polling: true,

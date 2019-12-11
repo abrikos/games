@@ -67,6 +67,7 @@ module.exports.controller = function (app) {
 
 
     app.post('/api/isAuth', passportLib.isLogged, async (req, res) => {
+        req.session.dddddddddd = 'ggggggggggg'
         Mongoose.User.findById(req.session.userId)
             .then(user => res.send(user))
             .catch(error => {
