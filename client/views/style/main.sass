@@ -4,10 +4,30 @@ html
     background-color: black
     color: antiquewhite
     min-height: 100%
-    .content.main
+    .tables-list
+      td, th
+        padding: 10px
+
 
     .purchase-edit
       font-size: .7em
       .good-form
         .col-4, .col-2
           padding: 0
+
+    .user-avatar
+      margin: 2px
+      $with: 150px
+      display: inline-block
+      text-align: center
+      padding: 2px
+      .user-avatar-image
+        //border: 4px dotted white
+        display: inline-block
+        border-radius: $with / 2
+        width: $with
+        height: $with
+        overflow: hidden
+        img
+          max-width: 100%
+          max-height: 100%

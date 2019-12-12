@@ -1,4 +1,4 @@
-import Mongoose from "server/db/mongoose";
+import Mongoose from "server/db/Mongoose";
 const logger = require('logat');
 const WebSocket = require('ws');
 require('dotenv').config();
@@ -12,8 +12,7 @@ export default function websocket(wss) {
     }
 
     wss.on('connection', function connection(ws, request) {
-        console.log('CONNECTED');
-        console.log('zzzzzzzzzzzzzzzzzzz',request.session);
+        //console.log('CONNECTED');
         ws.on('message', function incoming(received) {
             let data;
             try{

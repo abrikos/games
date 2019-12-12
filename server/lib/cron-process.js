@@ -1,4 +1,4 @@
-import Mongoose from "server/db/mongoose";
+import Mongoose from "server/db/Mongoose";
 //const Centrifuge = require("centrifuge");
 const logger = require('logat');
 const CronJob = require('cron').CronJob;

@@ -1,4 +1,4 @@
-import Mongoose from "server/db/mongoose";
+import Mongoose from "server/db/Mongoose";
 
 const passportLib = require('server/lib/passport');
 const passport = require('passport');

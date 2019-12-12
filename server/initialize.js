@@ -1,4 +1,4 @@
-import Mongoose from "server/db/mongoose";
+import Mongoose from "server/db/Mongoose";
 
 async function init() {
     //Mongoose.User.find()    .then(g=>console.log(g))

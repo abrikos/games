@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import Layout from "client/views/Layout";
 import API from "client/API";
 import {navigate} from "hookrouter";
@@ -8,42 +8,62 @@ import ServerError from "client/service/server-error";
 import cookieParser from 'cookie';
 
 export default function App() {
+    const [telegramAvailable, setTelegramAvailable] = useState(false)
+    const [alert, setAlert] = useState({isOpen: false});
+    const [authenticatedUser, setAuth] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [errorPage, setErrorPage] = useState(false);
+
     let websocket;
     let wsOnMessage;
 
-    function start() {
-        websocket = new WebSocket(`ws://${window.location.hostname}/ws2`);
+    function startWebSocket() {
+        websocket = new WebSocket(`ws://${window.location.hostname}/ws`);
         websocket.onopen = function () {
             console.log('WS connected!');
         };
-        if(wsOnMessage) websocket.onmessage = wsOnMessage;
+        if (wsOnMessage) websocket.onmessage = wsOnMessage;
         websocket.onclose = function () {
             //console.log('WS closed!');
             //reconnect now
-            check();
+            checkWebsocket();
         };
     }
 
-    function check() {
-        if (!websocket || websocket.readyState === 3) start();
+    function checkWebsocket() {
+        if (!websocket || websocket.readyState === 3) startWebSocket();
     }
 
+    startWebSocket();
+    setInterval(checkWebsocket, 5000);
 
-    start();
+    const isAvailable = () => {
+        const timeout = new Promise((resolve, reject) => {
+            setTimeout(reject, 1400, 'Request timed out');
+        });
 
-    setInterval(check, 5000);
-    const [alert, setAlert] = useState({isOpen: false});
-    const [authenticatedUser, setAuth] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [errorPage, setErrorPage] = useState(false)
+        const request = fetch('https://t.me', {mode: 'no-cors'});
+
+        return Promise
+            .race([timeout, request])
+            .then(response => {
+                console.log('TELEGRAM AVAIL');
+                setTelegramAvailable(true)
+            })
+            .catch(error => setTelegramAvailable(false));
+    };
+    useEffect(()=>{isAvailable()},[])
+
+
     const params = {
+        telegramAvailable,
         cookies: cookieParser.parse(document.cookie),
         websocket,
         errorPage,
         loading,
         authenticatedUser,
         alert,
-        onWsMessage(func){
+        onWsMessage(func) {
             wsOnMessage = func;
             websocket.onmessage = func;
         },

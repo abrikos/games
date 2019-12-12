@@ -1,4 +1,4 @@
-import Mongoose from "server/db/mongoose";
+import Mongoose from "server/db/Mongoose";
 
 const passportLib = require('server/lib/passport');
 const passport = require('passport');
@@ -52,13 +52,13 @@ module.exports.controller = function (app) {
 
 
     app.get('/api/login/telegram', passport.authenticate('telegram'), async (req, res) => {
-        if (req.cookie && Mongoose.Types.ObjectId.isValid(req.cookie.parentUser)) {
+        /*if (req.cookie && Mongoose.Types.ObjectId.isValid(req.cookie.parentUser)) {
             Mongoose.User.findById(req.cookie.parentUser)
                 .then(parent => {
                     addReferral(parent, req);
                 })
-        }
-        res.redirect('/cabinet')
+        }*/
+        res.redirect(req.query.returnUrl)
     });
 
     app.post('/api/login/test', passport.authenticate('test'), (req, res) => {
@@ -67,7 +67,6 @@ module.exports.controller = function (app) {
 
 
     app.post('/api/isAuth', passportLib.isLogged, async (req, res) => {
-        req.session.dddddddddd = 'ggggggggggg'
         Mongoose.User.findById(req.session.userId)
             .then(user => res.send(user))
             .catch(error => {

@@ -15,6 +15,7 @@ export default function Layout(props) {
 
     const menuItems = [
         {label: t('Home'), path: '/'},
+        {label: t('Dice'), path: '/Dice'},
         {label: t('Filler'), path: '/filler'},
         {label: t('BlackJack'), path: '/black-jack'},
         {label: t('Cabinet'), path: '/cabinet', hidden: !props.authenticatedUser},

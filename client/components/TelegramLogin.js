@@ -1,9 +1,11 @@
 import React, {useEffect} from "react";
+import url from "url";
 
 export default function TelegramLogin(props) {
     const id = 'TelegramLoginButton';
-
     useEffect(() => {
+        const path = url.parse(window.location.href)
+        console.log(path.path)
 
 
         props.api('/site-info')
@@ -17,7 +19,7 @@ export default function TelegramLogin(props) {
                 script.setAttribute('data-request-access', 'write');
                 //script.setAttribute('data-userpic', true);
                 //script.setAttribute('data-onauth', `telegramAuth(user)`);
-                script.setAttribute('data-auth-url', `${res.site}/api/login/telegram`);
+                script.setAttribute('data-auth-url', `${res.site}/api/login/telegram?returnUrl=${path.path}`);
                 script.async = true;
                 const container = document.getElementById(id)
                 container && container.appendChild(script);

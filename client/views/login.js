@@ -1,8 +1,10 @@
 import React from 'react';
 import {t} from "client/components/Translator";
 import TelegramLogin from "client/components/TelegramLogin";
+import {navigate} from "hookrouter";
 
 export default function Login(props) {
+    if(props.authenticatedUser) navigate('/cabinet');
     return <div>
         <div className={'d-flex justify-content-center'}>
             <div className={'card'}>

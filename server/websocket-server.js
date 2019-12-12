@@ -15,12 +15,7 @@ const mongoose = require("mongoose");
 const cookieParser = require('cookie-parser');
 
 const app = express();
-const map = new Map();
 
-//
-// We need the same instance of the session parser in express and
-// WebSocket server.
-//
 const sessionParser = session({
     saveUninitialized: false,
     secret: '$eCuRiTy',
@@ -28,27 +23,16 @@ const sessionParser = session({
     store: new MongoStore({mongooseConnection: mongoose.connection})
 });
 
-//
-// Serve static files from the 'public' folder.
-//
-app.use(express.static('public'));
-/*app.use(session({
-    key: 'sesscookiename',
-    secret: 'keyboard sadasd323',
-    resave: false,
-    cookie: {_expires: 60000000, maxAge: 10 * 60 * 1000},
-    saveUninitialized: false,
-    store: new MongoStore({mongooseConnection: mongoose.connection})
-}));*/
+app.use(function (req, res, next) {
+    res.wss = wss;
+    next();
+});
+
+
 app.use(sessionParser);
 app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
-
-
-app.get('/api',(req,res)=>{
-    res.send({ok:'OJ'})
-})
 
 
 fs.readdirSync(__dirname + '/controllers').forEach(function (file) {
@@ -63,6 +47,8 @@ fs.readdirSync(__dirname + '/controllers').forEach(function (file) {
 //
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ clientTracking: true, noServer: true });
+
+
 /*
 const wss = new (WebSocket.Server)({
     clientTracking: false, noServer: true,
@@ -75,22 +61,13 @@ const wss = new (WebSocket.Server)({
 })
 */
 
-app.post('/api/test',(req,res)=>{
-    console.log('FSSSSSSSSSSs', req.session)
-    res.sendStatus(200)
-});
 
 server.on('upgrade', function(request, socket, head) {
-    console.log('UPGRADE Parsing session from request...');
-    //console.log(request.session.userId)
     sessionParser(request, {}, () => {
        /* if (!request.session.userId) {
             socket.destroy();
             return;
         }*/
-
-        console.log('Session is parsed!');
-
         wss.handleUpgrade(request, socket, head, function(ws) {
             wss.emit('connection', ws, request);
         });

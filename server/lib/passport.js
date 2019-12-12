@@ -1,4 +1,4 @@
-import Mongoose from "server/db/mongoose";
+import Mongoose from "server/db/Mongoose";
 import moment from "moment";
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
@@ -72,12 +72,12 @@ passport.use('telegram', new TelegramStrategy(function (req, done) {
 
 
 function checkSignature({hash, ...data}) {
-    console.log(hash, data)
     const TOKEN = process.env.BOT_TOKEN;
     const secret = crypto.createHash('sha256')
         .update(TOKEN)
         .digest();
-    const checkString = Object.keys(data)
+    const {returnUrl, ...rest} = data;
+    const checkString = Object.keys(rest)
         .sort()
         .map(k => (`${k}=${data[k]}`))
         .join('\n');
