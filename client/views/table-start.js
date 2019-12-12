@@ -4,6 +4,7 @@ import {Button} from "reactstrap";
 import {navigate} from "hookrouter";
 import TelegramLogin from "client/components/TelegramLogin";
 import {Animated} from "react-animated-css";
+import GameNotLogged from "client/components/GameNotLogged";
 
 export default function TableStart(props) {
     const [tables, setTables] = useState([])
@@ -78,8 +79,9 @@ export default function TableStart(props) {
         </table>
     }
 
-    if (!props.authenticatedUser) return <div>{t('To play this game please log in')} <TelegramLogin {...props}/></div>
+    if (!props.authenticatedUser) return <GameNotLogged game={props.game} {...props}/>
     return <div>
+        <h1>{props.game}. {t('List of tables')}</h1>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css"/>
 
         <Button onClick={startGame} color={'primary'}>{t('Start new game')}</Button>
@@ -87,8 +89,6 @@ export default function TableStart(props) {
             <div><strong>{t('I can join')} {table(tables.filter(imNotIn).filter(g => g.canJoin))}</strong></div>
             <div><strong>{t('I play')} {table(tables.filter(imIn))}</strong></div>
         </div>
-
-
     </div>;
 }
 

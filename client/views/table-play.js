@@ -4,6 +4,7 @@ import {Button} from "reactstrap";
 import {navigate} from "hookrouter";
 import * as Games from "client/views/Games"
 import Loader from "client/components/Loader";
+import GameNotLogged from "client/components/GameNotLogged";
 
 export default function TablePlay(props) {
     const [table, setTable] = useState();
@@ -41,7 +42,8 @@ export default function TablePlay(props) {
             })
     }
 
-    if(!table) return <Loader/>
+    if (!props.authenticatedUser) return <GameNotLogged game={props.game} {...props}/>;
+    if(!table) return <Loader/>;
     return <div>
         <h1>{t('Play')} {t(table.game)} "{table.name.replace(/^./, table.name[0].toUpperCase())}"</h1>
         {Games[table.game]({table, ...props})}
