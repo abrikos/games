@@ -12,7 +12,8 @@ export default function websocket(wss) {
     }
 
     wss.on('connection', function connection(ws, request) {
-        console.log('CONNECTED', request.session)
+        console.log('CONNECTED');
+        console.log('zzzzzzzzzzzzzzzzzzz',request.session);
         ws.on('message', function incoming(received) {
             let data;
             try{

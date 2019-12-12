@@ -136,7 +136,8 @@
     "webpack-dev-server": "3.1.11",
     "webpack-manifest-plugin": "2.0.4",
     "with-query": "^1.1.2",
-    "workbox-webpack-plugin": "3.6.3"
+    "workbox-webpack-plugin": "3.6.3",
+    "cookie": "latest"
   },
   "scripts": {
     "start": "NODE_PATH=. node scripts/start.js",

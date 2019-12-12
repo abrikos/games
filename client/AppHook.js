@@ -5,7 +5,7 @@ import {navigate} from "hookrouter";
 import NotFound from "client/service/notfound";
 import AccessDenied from "client/service/access-denied";
 import ServerError from "client/service/server-error";
-
+import cookieParser from 'cookie';
 
 export default function App() {
     let websocket;
@@ -37,6 +37,7 @@ export default function App() {
     const [loading, setLoading] = useState(false)
     const [errorPage, setErrorPage] = useState(false)
     const params = {
+        cookies: cookieParser.parse(document.cookie),
         websocket,
         errorPage,
         loading,

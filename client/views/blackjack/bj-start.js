@@ -1,10 +1,8 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import * as Cards from "./cards/index"
 
 import {t} from "client/components/Translator"
 import {isMoment} from "moment";
-
-console.log(Cards)
 
 export default function BJStart(props) {
     const [x, setX] = useState({})
@@ -12,6 +10,11 @@ export default function BJStart(props) {
     const values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 
     props.onWsMessage(onWsMessage);
+
+    useEffect(()=>{
+        console.log('cookie',props.cookies._ym_uid)
+        props.api('/test')
+    },[])
 
     function onWsMessage(event) {
         console.log(event.data)

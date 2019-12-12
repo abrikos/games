@@ -9,9 +9,9 @@ const express = require('express');
 const http = require('http');
 const uuid = require('uuid');
 const passport = require('passport');
-//const MongoStore = require('connect-mongo')(session);
+const MongoStore = require('connect-mongo')(session);
 const WebSocket = require('ws');
-//const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 const cookieParser = require('cookie-parser');
 
 const app = express();
@@ -24,56 +24,32 @@ const map = new Map();
 const sessionParser = session({
     saveUninitialized: false,
     secret: '$eCuRiTy',
-    resave: false
+    resave: false,
+    store: new MongoStore({mongooseConnection: mongoose.connection})
 });
 
 //
 // Serve static files from the 'public' folder.
 //
 app.use(express.static('public'));
-//app.use(sessionParser);
-app.use(cookieParser());
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-/*
-app.use(session({
+/*app.use(session({
     key: 'sesscookiename',
     secret: 'keyboard sadasd323',
     resave: false,
-    cookie: {_expires: 60000000},
+    cookie: {_expires: 60000000, maxAge: 10 * 60 * 1000},
     saveUninitialized: false,
     store: new MongoStore({mongooseConnection: mongoose.connection})
-}));
-*/
+}));*/
+app.use(sessionParser);
+app.use(cookieParser());
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 app.get('/api',(req,res)=>{
     res.send({ok:'OJ'})
 })
 
-app.post('/login', function(req, res) {
-    //
-    // "Log in" user and set userId to session.
-    //
-    const id = uuid.v4();
-
-    console.log(`Updating session for user ${id}`);
-    req.session.userId = id;
-    res.send({ result: 'OK', message: 'Session updated' });
-});
-
-app.delete('/logout', function(request, response) {
-    const ws = map.get(request.session.userId);
-
-    console.log('Destroying session');
-    request.session.destroy(function() {
-        if (ws) ws.close();
-
-        response.send({ result: 'OK', message: 'Session destroyed' });
-    });
-});
 
 fs.readdirSync(__dirname + '/controllers').forEach(function (file) {
     if(file.substr(-3) === '.js') {
@@ -86,13 +62,28 @@ fs.readdirSync(__dirname + '/controllers').forEach(function (file) {
 // Create HTTP server by ourselves.
 //
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ clientTracking: false, noServer: true });
+const wss = new WebSocket.Server({ clientTracking: true, noServer: true });
+/*
+const wss = new (WebSocket.Server)({
+    clientTracking: false, noServer: true,
+    verifyClient: (info, done) => {
+        sessionParser(info.req, {}, () => {
+            console.log('FFFFFFFFFFFFFF',info.req.session)
+            //done(info.req.session)
+        })
+    }
+})
+*/
+
+app.post('/api/test',(req,res)=>{
+    console.log('FSSSSSSSSSSs', req.session)
+    res.sendStatus(200)
+});
 
 server.on('upgrade', function(request, socket, head) {
-    console.log('Parsing session from request...');
+    console.log('UPGRADE Parsing session from request...');
     //console.log(request.session.userId)
     sessionParser(request, {}, () => {
-        console.log(request.session)
        /* if (!request.session.userId) {
             socket.destroy();
             return;
@@ -112,6 +103,6 @@ websocket(wss);
 //
 // Start the server.
 //
-server.listen(3005, function() {
-    console.log('Listening on http://localhost:8080');
+server.listen(process.env.SERVER_PORT, function() {
+    console.log('Listening on ' + process.env.SERVER_PORT);
 });
