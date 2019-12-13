@@ -2,9 +2,9 @@ import React, {useEffect, useState} from 'react';
 import {t} from "client/components/Translator"
 import {Button} from "reactstrap";
 import {navigate} from "hookrouter";
-import TelegramLogin from "client/components/TelegramLogin";
 import {Animated} from "react-animated-css";
 import GameNotLogged from "client/components/GameNotLogged";
+import MyBreadCrumb from "client/components/MyBreadCrumb";
 
 export default function TableStart(props) {
     const [tables, setTables] = useState([])
@@ -22,9 +22,10 @@ export default function TableStart(props) {
 
     function onWsMessage(event) {
         const data = JSON.parse(event.data);
-        if (props.game !== data.table.game) return;
-        //console.log(event.data)
-        setTableUpdated(data.table);
+        console.log(data)
+        if (props.game !== data.game) return;
+
+        setTableUpdated(data.id);
         setTimeout(() => setTableUpdated(null), 1000)
         reloadTables();
 
@@ -53,7 +54,7 @@ export default function TableStart(props) {
     }
 
     function isTableUpdated(t) {
-        return tableUpdated && t.id === tableUpdated.id
+        return t.id === tableUpdated
     }
 
     function table(rows) {
@@ -81,6 +82,7 @@ export default function TableStart(props) {
 
     if (!props.authenticatedUser) return <GameNotLogged game={props.game} {...props}/>
     return <div>
+        <MyBreadCrumb items={[{label:props.game}]}/>
         <h1>{props.game}. {t('List of tables')}</h1>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css"/>
 

@@ -8,21 +8,21 @@ import ServerError from "client/service/server-error";
 import cookieParser from 'cookie';
 
 export default function App() {
-    const [telegramAvailable, setTelegramAvailable] = useState(false)
+
     const [alert, setAlert] = useState({isOpen: false});
     const [authenticatedUser, setAuth] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorPage, setErrorPage] = useState(false);
 
     let websocket;
-    let wsOnMessage;
+    //let wsOnMessage;
 
     function startWebSocket() {
         websocket = new WebSocket(`ws://${window.location.hostname}/ws`);
         websocket.onopen = function () {
             console.log('WS connected!');
         };
-        if (wsOnMessage) websocket.onmessage = wsOnMessage;
+        //if (wsOnMessage) websocket.onmessage = wsOnMessage;
         websocket.onclose = function () {
             //console.log('WS closed!');
             //reconnect now
@@ -37,26 +37,8 @@ export default function App() {
     startWebSocket();
     setInterval(checkWebsocket, 5000);
 
-    const isAvailable = () => {
-        const timeout = new Promise((resolve, reject) => {
-            setTimeout(reject, 1400, 'Request timed out');
-        });
-
-        const request = fetch('https://t.me', {mode: 'no-cors'});
-
-        return Promise
-            .race([timeout, request])
-            .then(response => {
-                console.log('TELEGRAM AVAIL');
-                setTelegramAvailable(true)
-            })
-            .catch(error => setTelegramAvailable(false));
-    };
-    useEffect(()=>{isAvailable()},[])
-
 
     const params = {
-        telegramAvailable,
         cookies: cookieParser.parse(document.cookie),
         websocket,
         errorPage,
@@ -64,7 +46,7 @@ export default function App() {
         authenticatedUser,
         alert,
         onWsMessage(func) {
-            wsOnMessage = func;
+            //wsOnMessage = func;
             websocket.onmessage = func;
         },
         ws(data) {

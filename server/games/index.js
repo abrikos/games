@@ -1,1 +1,1 @@
-export {default as Dice} from "./Dice"
+export {default as Dice} from "./DiceGame"
