@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import UserAvatar from "client/components/UserAvatar";
 import "./Dice.sass";
 import {Button} from "reactstrap";
@@ -18,7 +18,7 @@ export default function DiceTable(props) {
 
     function loadTable() {
         props.api('/table/' + props.id)
-            .then(res=>{
+            .then(res => {
                 setTable(res)
             })
     }
@@ -38,12 +38,11 @@ export default function DiceTable(props) {
     }
 
     function lastTurn(player) {
-        const round = table.rounds[table.rounds.length - 1];
-        if (!round) return;
-        const turns = round.turns.filter(t => t.player === player)
-        const last = turns.length - 1;
-        if (!turns[last]) return '';
-        return <span>{turns[last].dices && turns[last].dices.map((d, i) => <span key={i} className={`dice p-2`}>{d}</span>)}</span>;
+        if (!table.lastRound) return;
+        const turns = table.turns.filter(t => t.player === player && t.round === table.lastRound.id)
+        const last = turns[turns.length - 1];
+        if (!last) return '';
+        return <span>{last.data.dices.map((d, i) => <span key={i} className={`dice p-2`}>{d}</span>)}</span>;
     }
 
     if (!table) return <Loader/>;
@@ -52,7 +51,7 @@ export default function DiceTable(props) {
     const rounds = table.rounds;
 
     return <div className="Dice-table p-4">
-        <button onClick={()=>props.api('/table/test-websocket')}>TEST</button>
+        <button onClick={() => props.api('/table/test-websocket')}>TEST</button>
         <div className="text-center">
             <UserAvatar user={player} {...props}/>
             {lastTurn(props.authenticatedUser._id)}
@@ -69,9 +68,9 @@ export default function DiceTable(props) {
                 </div>)}
             </div>
             <div className="col">
-                {rounds.map((r,i)=><div key={i} className={'row'}>
-                    <div className="col">{JSON.stringify(r)}</div>
-                    <div className="col">{i} {r.winner}</div>
+                {rounds.map((r, i) => <div key={i} className={'row'}>
+                    <div className="col">{i+1}.</div>
+                    <div className="col">{r.winner}</div>
                     <div className="col">{r.sum}</div>
                 </div>)}
             </div>

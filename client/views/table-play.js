@@ -18,6 +18,7 @@ export default function TablePlay(props) {
     function loadTable() {
         props.api('/table/' + props.id)
             .then(res=>{
+                if(!res) return navigate('/games');
                 setTable(res)
             })
     }

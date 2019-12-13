@@ -14,34 +14,41 @@ module.exports.controller = function (app) {
         res.sendStatus(200)
     });
 
+
     app.post('/api/table/turn/:game/:id', passportLib.isLogged, (req, res) => {
         const game = Games[req.params.game];
         if (!game) return res.sendStatus(406);
         Mongoose.Table.findById(req.params.id)
             .populate('players')
             .then(table => {
+
                 if (!game.canTurn(table, req.session.userId)) return res.send({error: 500, message: 'Not you turn'});
-                const turn = game.makeTurn(table, req.session.userId);
-                console.log(turn)
-                if(turn.last){
+                if (!table.rounds.length) table.addRound();
+                const turn = {...table.newTurn(req.session.userId), ...game.getTurnData(table.prevTurn)};
+                if (turn.lastInRound) {
+                    const winners = game.getRoundWinners(table);
+                    console.log(winners)
                     table.turn = table.players[0]._id;
-                    table.rounds.push(game.createRound(table.turn))
-                }else{
+                    table.addRound();
+                    //TODO finish round
+                } else {
                     table.turn = table.nextTurn(req.session.userId);
-                    console.log(table.rounds[table.rounds.length - 1].turns.length)
-                    table.rounds[table.rounds.length - 1].turns.push(turn)
-                    console.log(table.rounds[table.rounds.length - 1].turns.length)
                 }
-                //table.rounds.push();
+
+                table.turns.push(turn);
+
                 table.save()
-                    .then(t=>{
-                        console.log(t.rounds[t.rounds.length - 1].turns.length)
-                    });
+                    .then(t => {
+
+                    })
+                    .catch(e => logger.error(e.message))
+                ;
                 websocketSend(res, 'turn', table);
                 res.sendStatus(200)
             })
             .catch(e => res.send({error: 500, message: e.message}))
     });
+
 
     app.post('/api/table/leave/:id', passportLib.isLogged, (req, res) => {
         Mongoose.Table.findById(req.params.id)
@@ -61,7 +68,6 @@ module.exports.controller = function (app) {
                 res.sendStatus(200);
 
 
-
             })
             .catch(e => res.send({error: 500, message: e.message}))
     });
@@ -76,7 +82,6 @@ module.exports.controller = function (app) {
                 table.addPlayer(req.session.userId);
                 if (!table.turn) {
                     table.turn = req.session.userId;
-                    table.rounds.push(game.createRound(req.session.userId));
                 }
                 table.save()
                     .then(t => {
