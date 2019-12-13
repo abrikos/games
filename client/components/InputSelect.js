@@ -2,8 +2,9 @@ import React from "react";
 import PropTypes from "prop-types";
 
 export default function InputSelect(props) {
-
-    return <select onChange={e=>props.onChange(e.target.value)} className="form-control" defaultValue={props.defaultValue}>
+    const params ={className:"form-control", defaultValue:props.defaultValue, name:props.name};
+    if(props.onChange) params.onChange = e=>props.onChange(e.target.value);
+    return <select {...params}>
         {props.options.map((item,i)=>{
             if(item.options){
                 return <optgroup key={i} label={item.label} className={item.className || ''}> {item.options.map((item2,i2)=><option key={i2} value={item2.value}>{item2.label}</option>)}</optgroup>

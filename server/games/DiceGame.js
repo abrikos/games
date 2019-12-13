@@ -4,36 +4,55 @@ export default {
     turnsPerRound: 4,
     dices: 2,
 
-    canTurn(table, player) {
-        //logger.info(table.turn, player)
-        return !table.turn || table.turn.toString() === player.toString();
+    options: [
+        {name: "defaultBet", type: "number", step:0.01, label: "Default bet", default:100},
+        {name: "dices", type: "select", options: [2, 3, 4, 5], label: "Count of dices", default:2},
+        {name: "maxPlayers", type: "select", options: [2, 3, 4, 5], label: "Max players", default:3},
+        {name: "waitPlayer", type: "range", min:30, max:120, label: "Seconds to wait players turn", default:45}
+    ],
+
+    payWinners(table){
+        for(const winner of this.getRoundWinners(table)){
+            winner[table.isVirtual?'balanceVirtual':'balance'] += winner.amount;
+            winner.save();
+        }
+
     },
 
-    whoTurn(table) {
-        const lastRound = table.rounds[table.rounds.length - 1];
-        for (const turn of lastRound.turns) {
-            if (!turn.dices) return turn.player;
+    checkOptions(options){
+        const data = {};
+        for(const option of this.options){
+            const value = options[option.name] || option.default;
+            data[option.name] = value;
         }
+        return data;
     },
 
     getRoundWinners(table) {
-        const sums = [];
+        const results = this.getRoundResults(table);
+        let max = 0;
+        for (const s of results) {
+            if (s.value > max) max = s.value
+        }
+        const winners = results.filter(s => s.result === max);
+        return winners.map(w => {
+            return {player: w.player, amount: table.lastRound.bank / winners.length}
+        });
+    },
+
+    getRoundResults(table){
+        const results = [];
         for (const player of table.players) {
             const turns = table.roundTurns.filter(t => t.player.toString() === player._id.toString());
-            let sum = 0;
+            let value = 0;
             for (const t of turns) {
                 for (const dice of t.data.dices) {
-                    sum += dice;
+                    value += dice;
                 }
             }
-            sums.push({player, sum});
+            results.push({player, value});
         }
-        let max = 0;
-        for (const s of sums) {
-            if (s.sum > max) max = s.sum
-        }
-        const winners = sums.filter(s=>s.sum===max);
-        return winners.map(w=>{return {player:w.player._id, amount: table.lastRound.bank / winners.length}});
+        return results;
     },
 
     getTurnData(prevTurn) {

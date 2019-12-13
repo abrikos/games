@@ -9,6 +9,7 @@ const roundSchema = new Schema({
         end: {type: Date},
         active: {type: Boolean, default: true},
         bank: {type: Number, default: 0},
+        data: Object
     },
     {
         timestamps: {createdAt: 'createdAt'},
@@ -40,8 +41,10 @@ const modelSchema = new Schema({
         rounds: [{type: roundSchema}],
         turns: [{type: turnSchema}],
 
-        params: {type: Object},
+        isVirtual: {type: Boolean, default: true},
+        options: {type: Object},
         maxPlayers: {type: Number, default: 2},
+        waitPlayer: {type: Number, default: 45},
         activePlayer: {type: Number, default: 0},
         active: {type: Boolean, default: true}
     },

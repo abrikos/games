@@ -8,10 +8,10 @@ const logger = require('logat');
 
 module.exports.controller = function (app) {
 
-
-    app.post('/api/table/test-websocket', passportLib.isLogged, (req, res) => {
-        websocketSend(res, 'turn', {message: ' TEXZZZZ'})
-        res.sendStatus(200)
+    app.post('/api/table/:game/options', passportLib.isLogged, (req, res) => {
+        const game = Games[req.params.game];
+        if (!game) return res.sendStatus(406);
+        res.send(game.options)
     });
 
 
@@ -22,7 +22,7 @@ module.exports.controller = function (app) {
             .populate('players')
             .then(table => {
 
-                if (!game.canTurn(table, req.session.userId)) return res.send({error: 500, message: 'Not you turn'});
+                if (table.turn.toString() !== req.session.userId) return res.send({error: 500, message: 'Not you turn'});
                 if (!table.rounds.length) table.addRound();
                 const turn = {...table.newTurn(req.session.userId), ...game.getTurnData(table.prevTurn)};
                 if (turn.lastInRound) {
@@ -43,7 +43,7 @@ module.exports.controller = function (app) {
                     })
                     .catch(e => logger.error(e.message))
                 ;
-                websocketSend(res, 'turn', table);
+                websocketSend('turn', table);
                 res.sendStatus(200)
             })
             .catch(e => res.send({error: 500, message: e.message}))
@@ -55,7 +55,7 @@ module.exports.controller = function (app) {
             .populate('players')
             .then(table => {
                 table.removePlayer(req.session.userId);
-                websocketSend(res, 'leave', table);
+                websocketSend('leave', table);
                 if (!table.players.length) {
 
                     table.delete();
@@ -86,7 +86,7 @@ module.exports.controller = function (app) {
                 table.save()
                     .then(t => {
                         t.populate('players').execPopulate();
-                        websocketSend(res, 'join', t);
+                        websocketSend('join', t);
                         res.sendStatus(200)
                     })
 
@@ -108,11 +108,13 @@ module.exports.controller = function (app) {
         const table = new Mongoose.Table({game: req.params.game});
         const words = rword.generate(2, {length: '3-4'}).join(' ');
         table.name = words.replace(/^./, words[0].toUpperCase());
-        table.maxPlayers = game.maxPlayers;
+        table.options = game.checkOptions(req.body);
+        if (req.body.maxPlayers) table.maxPlayers = req.body.maxPlayers;
+        if (req.body.waitPlayer) table.waitPlayer = req.body.waitPlayer;
         table.addPlayer(req.session.userId);
         table.save()
             .then(g => {
-                websocketSend(res, 'create', table);
+                websocketSend('create', table);
                 res.send(table)
             })
             .catch(e => res.send({error: 500, message: e.message}))
@@ -128,8 +130,8 @@ module.exports.controller = function (app) {
             .catch(e => res.send({error: 500, message: e.message}))
     });
 
-    function websocketSend(res, action, table) {
-        res.wss.clients.forEach(function each(client) {
+    function websocketSend(action, table) {
+        app.locals.wss.clients.forEach(function each(client) {
             client.send(JSON.stringify({action: action, id: table.id, game: table.game}));
         });
     }

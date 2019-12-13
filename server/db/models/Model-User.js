@@ -9,6 +9,8 @@ const modelSchema = new Schema({
         username: String,
         photo_url: String,
         language_code: String,
+        balance: {type: Number},
+        balanceVirtual: {type: Number},
         referrals: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
         group: {type: mongoose.Schema.Types.ObjectId, ref: 'Group'},
     },
@@ -31,7 +33,6 @@ modelSchema.virtual('date')
     });
 
 
-
 modelSchema.virtual('parents', {
     ref: 'User',
     localField: '_id',
@@ -47,6 +48,6 @@ modelSchema.virtual('groups', {
 });
 
 
-const User = mongoose.model("User", modelSchema)
-export default User;
+export default mongoose.model("User", modelSchema)
+
 

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 import Layout from "client/views/Layout";
 import API from "client/API";
 import {navigate} from "hookrouter";
@@ -15,6 +15,7 @@ export default function App() {
     const [errorPage, setErrorPage] = useState(false);
 
     let websocket;
+
     //let wsOnMessage;
 
     function startWebSocket() {
@@ -111,15 +112,16 @@ export default function App() {
                 })
         },
 
-        logIn: (strategy) => {
-            API.postData('/login/' + strategy)
-                .then(res => {
-                    if (res.error) return;
-                    if (res.ok) setAuth(true);
-                    navigate('/cabinet');
+        formToObject(form) {
+            const array = Array.from(form.elements).filter(e=>!!e.name)
 
-                });
-        },
+            const obj = {};
+            for (const a of array) {
+                obj[a.name] =  parseFloat(a.value) || a.value
+                //if (a.name === 'name' && !a.value) errors.push(a.name)
+            }
+            return obj
+        }
     };
 
 

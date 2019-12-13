@@ -37,12 +37,17 @@ export default function DiceTable(props) {
             })
     }
 
+    function emojiDice(i) {
+        const dices=['⚀','⚁','⚂','⚃','⚄','⚅'];
+        return dices[i-1];
+    }
+
     function lastTurn(player) {
         if (!table.lastRound) return;
         const turns = table.turns.filter(t => t.player === player && t.round === table.lastRound.id)
         const last = turns[turns.length - 1];
         if (!last) return '';
-        return <span>{last.data.dices.map((d, i) => <span key={i} className={`dice p-2`}>{d}</span>)}</span>;
+        return <span className={'dice'}>{last.data.dices.map((d, i) => <span key={i} className={`m-2`}>{emojiDice(d)}</span>)} = {last.data.dices.reduce((a, b) => a + b, 0)}</span>;
     }
 
     if (!table) return <Loader/>;
@@ -51,11 +56,10 @@ export default function DiceTable(props) {
     const rounds = table.rounds;
 
     return <div className="Dice-table p-4">
-        <button onClick={() => props.api('/table/test-websocket')}>TEST</button>
         <div className="text-center">
             <UserAvatar user={player} {...props}/>
-            {lastTurn(props.authenticatedUser._id)}
-            {table.turn === props.authenticatedUser._id && <Button onClick={roll}>{t('Roll')}</Button>}
+            <h1>{lastTurn(props.authenticatedUser._id)}</h1>
+            {table.turn === props.authenticatedUser._id && <Button size={'lg'} color="primary" onClick={roll}>{t('Roll')}</Button>}
         </div>
 
         <hr/>

@@ -13,9 +13,10 @@ const MongoStore = require('connect-mongo')(session);
 const WebSocket = require('ws');
 const mongoose = require("mongoose");
 const cookieParser = require('cookie-parser');
-
+const bodyParser = require('body-parser');
 const app = express();
-
+const wss = new WebSocket.Server({ clientTracking: true, noServer: true });
+app.locals.wss = wss;
 const sessionParser = session({
     saveUninitialized: false,
     secret: '$eCuRiTy',
@@ -33,6 +34,8 @@ app.use(sessionParser);
 app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
 
 
 fs.readdirSync(__dirname + '/controllers').forEach(function (file) {
@@ -46,20 +49,8 @@ fs.readdirSync(__dirname + '/controllers').forEach(function (file) {
 // Create HTTP server by ourselves.
 //
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ clientTracking: true, noServer: true });
 
 
-/*
-const wss = new (WebSocket.Server)({
-    clientTracking: false, noServer: true,
-    verifyClient: (info, done) => {
-        sessionParser(info.req, {}, () => {
-            console.log('FFFFFFFFFFFFFF',info.req.session)
-            //done(info.req.session)
-        })
-    }
-})
-*/
 
 
 server.on('upgrade', function(request, socket, head) {
