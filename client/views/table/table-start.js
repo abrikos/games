@@ -70,6 +70,7 @@ export default function TableStart(props) {
                 <th>{t('Name')}</th>
                 <th>{t('Last activity')}</th>
                 <th>{t('Players')}</th>
+                <th>{t('Bet')}</th>
                 <th></th>
             </tr>
             </thead>
@@ -80,6 +81,7 @@ export default function TableStart(props) {
                 </Animated> : g.name}</td>
                 <td><small>{g.updated}</small></td>
                 <td className="text-center">{g.players.length}</td>
+                <td className="text-center">{g.options.defaultBet}</td>
                 <td><Button onClick={() => joinTable(g.id)} color={isTableUpdated(g) ? 'primary' : 'success'}>{t('Play')}</Button></td>
             </tr>)}
             </tbody>
@@ -118,7 +120,7 @@ function Option(props) {
             break;
 
         case "select":
-            control =  <InputSelect name={props.name} type={props.type} options={props.options.map(i=>{return{label:i, value:i}})}  defaultValue={props.default}/>;
+            control =  <InputSelect name={props.name} type={props.type} options={props.options.map(i=>{return i.value ? i :{label:i, value:i}})}  defaultValue={props.default.toString()}/>;
             break;
         default:
             control =  <Input name={props.name} defaultValue={props.default} type={props.type} step={props.step}/>

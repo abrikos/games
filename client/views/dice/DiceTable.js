@@ -4,6 +4,8 @@ import "./Dice.sass";
 import {Button} from "reactstrap";
 import {t} from "client/components/Translator"
 import Loader from "client/components/Loader";
+import StakeManage from "client/views/table/StakeManage";
+import MakeBet from "client/views/dice/MakeBet";
 
 export default function DiceTable(props) {
 
@@ -31,7 +33,7 @@ export default function DiceTable(props) {
     }
 
     function roll() {
-        props.api('/table/turn/Dice/' + table.id)
+        props.api(`/table/${table.id}/turn`)
             .then(res => {
                 loadTable()
             })
@@ -43,8 +45,8 @@ export default function DiceTable(props) {
     }
 
     function lastTurn(player) {
-        if (!table.lastRound) return;
-        const turns = table.turns.filter(t => t.player === player && t.round === table.lastRound.id)
+        if (!table.currentRound) return;
+        const turns = table.turns.filter(t => t.player === player && t.round === table.currentRound.id)
         const last = turns[turns.length - 1];
         if (!last) return '';
         return <span className={'dice'}>{last.data.dices.map((d, i) => <span key={i} className={`m-2`}>{emojiDice(d)}</span>)} = {last.data.dices.reduce((a, b) => a + b, 0)}</span>;
@@ -56,10 +58,23 @@ export default function DiceTable(props) {
     const rounds = table.rounds;
 
     return <div className="Dice-table p-4">
-        <div className="text-center">
-            <UserAvatar user={player} {...props}/>
-            <h1>{lastTurn(props.authenticatedUser._id)}</h1>
-            {table.turn === props.authenticatedUser._id && <Button size={'lg'} color="primary" onClick={roll}>{t('Roll')}</Button>}
+        <div className="row">
+            <div className="col-4">
+                <h1>{lastTurn(props.authenticatedUser._id)}</h1>
+            </div>
+            <div className="col-4">
+                Default bet {table.options.defaultBet}
+                <hr/>
+                <UserAvatar user={player} {...props}/>
+                <MakeBet table={table} {...props}/>
+            </div>
+            <div className="col-4">
+                <StakeManage table={table} {...props}/>
+                {table.turn === props.authenticatedUser._id && <Button size={'lg'} color="primary" onClick={roll}>{t('Bet')}</Button>}
+            </div>
+
+
+
         </div>
 
         <hr/>

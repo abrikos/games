@@ -1,5 +1,5 @@
 import Mongoose from "server/db/Mongoose";
-import moment from "moment";
+
 const passportLib = require('../lib/passport');
 const logger = require('logat');
 
@@ -8,6 +8,13 @@ const logger = require('logat');
 
 
 module.exports.controller = function (app) {
+
+    app.post('/api/cabinet/balance', passportLib.isLogged, (req, res) => {
+        Mongoose.User.findById(req.session.userId)
+            .then(user => {
+                res.send({amount:user.balance})
+            })
+    });
 
     app.post('/api/cabinet/referrals', passportLib.isLogged, (req, res) => {
         Mongoose.User.findById(req.session.userId)
@@ -38,7 +45,7 @@ module.exports.controller = function (app) {
     app.post('/api/cabinet/update/default-group/:gid', passportLib.isLogged, (req, res) => {
         if (!Mongoose.Types.ObjectId.isValid(req.params.gid)) return res.sendStatus(400);
         Mongoose.User.findById(req.session.userId)
-            .then(user=>{
+            .then(user => {
                 user.group = req.params.gid;
                 user.save();
                 res.sendStatus(200)

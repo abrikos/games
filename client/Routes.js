@@ -2,8 +2,8 @@ import React from "react";
 import Home from "client/views/home/home";
 import Login from "client/views/login";
 import Cabinet from "client/views/cabinet";
-import TablePlay from "client/views/table-play";
-import TableStart from "client/views/table-start";
+import TablePlay from "client/views/table/table-play";
+import TableStart from "client/views/table/table-start";
 
 export default function Routes(props){
 

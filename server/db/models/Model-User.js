@@ -9,7 +9,8 @@ const modelSchema = new Schema({
         username: String,
         photo_url: String,
         language_code: String,
-        balance: {type: Number},
+        realMode: {type: Boolean},
+        balanceReal: {type: Number},
         balanceVirtual: {type: Number},
         referrals: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
         group: {type: mongoose.Schema.Types.ObjectId, ref: 'Group'},
@@ -22,10 +23,20 @@ const modelSchema = new Schema({
         toJSON: {virtuals: true}
     });
 
+modelSchema.methods.addBalance = function (add) {
+    this[this.realMode ? 'balanceReal' : 'balanceVirtual'] += add;
+};
+
 modelSchema.virtual('name')
     .get(function () {
         return this.first_name;
     });
+
+modelSchema.virtual('balance')
+    .get(function () {
+        return this.realMode ? this.balanceReal : this.balanceVirtual;
+    })
+
 
 modelSchema.virtual('date')
     .get(function () {
