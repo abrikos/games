@@ -6,8 +6,8 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faMinus, faPlus} from "@fortawesome/free-solid-svg-icons";
 //import ToggleButton from 'react-toggle-button'
 
-export default function MakeBet(props) {
-    const [stake, setStake] = useState(props.table.sites.find(s => s.player === props.authenticatedUser._id))
+export default function PokerMakeBet(props) {
+    const [site, setSite] = useState(props.table.playerSite);
 
     function showValue(e){
         const span = document.getElementById(`rise-amount`);
@@ -24,7 +24,7 @@ export default function MakeBet(props) {
         <Button color="warning">{t('Fold')}</Button>
         <hr/>
         <div>{t('Rise')}: <span id={`rise-amount`}>{props.table.options.blind * 2}</span>
-            <input type="range" className="custom-range" min={props.table.options.blind * 2} max={stake.amount} name={props.name} onChange={showValue} defaultValue={props.table.options.blind * 2} onMouseUp={rise}/>
+            <input type="range" className="custom-range" min={props.table.options.blind * 2} max={site.stake} name={props.name} onChange={showValue} defaultValue={props.table.options.blind * 2} onMouseUp={rise}/>
         </div>
     </div>;
 }

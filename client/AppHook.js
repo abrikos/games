@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import Layout from "client/views/Layout";
 import API from "client/API";
 import {navigate} from "hookrouter";
@@ -13,6 +13,7 @@ export default function App() {
     const [authenticatedUser, setAuth] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorPage, setErrorPage] = useState(false);
+    const [message, setMessage] = useState({});
 
     let websocket;
 
@@ -24,6 +25,10 @@ export default function App() {
             console.log('WS connected!');
         };
         //if (wsOnMessage) websocket.onmessage = wsOnMessage;
+        websocket.onmessage = event => {
+            setMessage(JSON.parse(event.data))
+        };
+
         websocket.onclose = function () {
             //console.log('WS closed!');
             //reconnect now
@@ -35,21 +40,20 @@ export default function App() {
         if (!websocket || websocket.readyState === 3) startWebSocket();
     }
 
-    startWebSocket();
-    setInterval(checkWebsocket, 5000);
+
+    useEffect(() => {
+        startWebSocket();
+        setInterval(checkWebsocket, 1000);
+    }, [])
 
 
     const params = {
         cookies: cookieParser.parse(document.cookie),
-        websocket,
+        message,
         errorPage,
         loading,
         authenticatedUser,
         alert,
-        onWsMessage(func) {
-            //wsOnMessage = func;
-            websocket.onmessage = func;
-        },
         ws(data) {
             if (websocket.readyState !== 1) {
                 websocket = new WebSocket(`ws://${window.location.hostname}/ws`);
@@ -113,11 +117,11 @@ export default function App() {
         },
 
         formToObject(form) {
-            const array = Array.from(form.elements).filter(e=>!!e.name)
+            const array = Array.from(form.elements).filter(e => !!e.name)
 
             const obj = {};
             for (const a of array) {
-                obj[a.name] =  parseFloat(a.value) || a.value
+                obj[a.name] = parseFloat(a.value) || a.value
                 //if (a.name === 'name' && !a.value) errors.push(a.name)
             }
             return obj

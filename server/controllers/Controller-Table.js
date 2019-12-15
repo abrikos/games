@@ -47,46 +47,46 @@ module.exports.controller = function (app) {
     });
 
 
-    app.post('/api/table/leave/:id', passportLib.isLogged, (req, res) => {
+    app.post('/api/table/:id/leave', passportLib.isLogged, (req, res) => {
         Mongoose.Table.findById(req.params.id)
-            .populate('players')
+            .populate(Mongoose.Table.population)
             .then(table => {
-                table.gameClass.onPlayerLeft(table)
+                const site = table.sitePlayer(req.session.userId);
+                site.player.addBalance(site.stake);
                 table.removePlayer(req.session.userId);
                 websocketSend('leave', table);
-                if (!table.players.length) {
-
+                if (!table.sitesActive.length) {
                     table.delete();
                     return res.sendStatus(200)
                 }
-                if (table.players.length === 1) {
-                    table.turn = null
+                if (table.sitesActive.length === 1) {
+                    table.closePot();
                 }
-                table.save()
+                table.save();
+                console.log('USER LEAVE')
                 res.sendStatus(200);
-
-
             })
             .catch(e => res.send({error: 500, message: e.message}))
     });
 
-    app.post('/api/table/join/:id/:site', passportLib.isLogged, (req, res) => {
+    app.post('/api/table/:id/join/site/:site', passportLib.isLogged, (req, res) => {
         Mongoose.Table.findById(req.params.id)
-            .populate('players')
+            .populate(Mongoose.Table.population)
             .then(table => {
-                if (table.players.includes(req.session.userId)) return res.sendStatus(200)
-                if (!table.canJoin) return res.send({error: 500, message: 'Table is full'});
-                table.extendLogic();
-                table.logicAddPlayer(req.session.userId, req.params.site);
-                table.save()
-                    .then(t => {
-                        t.populate('players').execPopulate();
-                        websocketSend('join', t);
-                        res.sendStatus(200)
+                Mongoose.User.findById(req.session.userId)
+                    .then(user => {
+                        if (table.sitePlayer(user.id)) return res.sendStatus(200);
+                        if (!table.canJoin) return res.send({error: 500, message: 'Table is full'});
+                        table.extendLogic();
+                        table.logicAddPlayer(user, req.params.site);
+                        table.save()
+                            .then(t => {
+                                websocketSend('join', t);
+                                res.sendStatus(200)
+                            })
                     })
-
             })
-            .catch(e => res.send({error: 500, message: e.message}))
+        //.catch(e => res.send({error: 500, message: e.message}))
     });
 
     app.post('/api/table/create/:game', passportLib.isLogged, (req, res) => {
@@ -98,11 +98,13 @@ module.exports.controller = function (app) {
         table.options = table.logicCheckOptions(req.body);
 
         Mongoose.User.findById(req.session.userId)
-            .then(user => {
-                for(let i=0; i<table.maxPlayers; i++){
+            .then(async user => {
+                for (let i = 0; i < table.maxPlayers; i++) {
+                    //const site = new Mongoose.Site({table});
+                    //await site.save();
                     table.sites.push({})
                 }
-                table.logicAddPlayer(user, table.sites[0]._id);
+                table.logicAddPlayer(user);
                 table.realMode = user.realMode;
                 table.save()
                     .then(g => {
@@ -111,12 +113,13 @@ module.exports.controller = function (app) {
                     })
                     .catch(e => res.send({error: 500, message: e.message}))
             })
-            //.catch(e => res.send({error: 500, message: e.message}))
+            .catch(e => res.send({error: 500, message: e.message}))
 
 
     });
 
-    app.post('/api/table/list/active/:game', passportLib.isLogged, (req, res) => {
+    app.post('/api/table/list/active/:game', (req, res) => {
+        //Mongoose.User.findById(req.session.userId);
         Mongoose.Table.find({active: true, game: req.params.game})
             .sort({updatedAt: -1})
             .then(tables => {
@@ -124,39 +127,49 @@ module.exports.controller = function (app) {
             })
     });
 
-    //Mongoose.User.find().then(us=>{        for(const u of us){            u.balanceVirtual = 100000000000;            u.save();        }    })
-
-    app.post('/api/table/:id/change-stake', passportLib.isLogged, (req, res) => {
+    app.post('/api/table/:id/site/player', passportLib.isLogged, (req, res) => {
         Mongoose.Table.findById(req.params.id)
-            .populate('players')
+            .populate(Mongoose.Table.population)
             .then(table => {
-                const stake = table.stakes.find(s => s.player.toString() === req.session.userId);
-                const player = table.players.find(s => s._id.toString() === req.session.userId);
+                res.send(table.sitePlayer(req.session.userId));
+            })
+            .catch(e => res.send({error: 500, message: e.message}))
+    });
+
+    app.post('/api/table/:id/stake/change', passportLib.isLogged, (req, res) => {
+        Mongoose.Table.findById(req.params.id)
+            .populate(Mongoose.Table.population)
+            .then(table => {
+                const site = table.sitePlayer(req.session.userId);
                 const amount = req.body.amount * req.body.factor;
-                stake.amount += amount;
-                player.addBalance(-amount);
-                player.save();
+                site.stake += amount;
+                site.player.addBalance(-amount);
+                site.player.save();
                 table.save()
                     .then(t => {
-                        res.send({stake, balance: {amount: player.balance}})
+                        websocketSend('stake/change', table);
+                        res.send({site, balance: {amount: site.player.balance}})
                     })
 
             })
             .catch(e => res.send({error: 500, message: e.message}))
     });
 
+
     app.post('/api/table/:id', passportLib.isLogged, (req, res) => {
         Mongoose.Table.findById(req.params.id)
-            .populate('players')
+            .populate('sites.player')
             .then(table => {
+                //table.logicHideOtherPlayers(req.session.userid);
+                table.playerSite = table.sitePlayer(req.session.userId)
                 res.send(table)
             })
-            .catch(e => res.send({error: 500, message: e.message}))
+            //.catch(e => res.send({error: 500, message: e.message}))
     });
 
     function websocketSend(action, table) {
         app.locals.wss.clients.forEach(function each(client) {
-            client.send(JSON.stringify({action: action, id: table.id, game: table.game}));
+            client.send(JSON.stringify({action, id: table.id, game: table.game, timestamp: new Date()}));
         });
     }
 };

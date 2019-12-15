@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import * as Cards from "./cards/index"
+import * as Cards from "../../images/cards/index"
 
 import {t} from "client/components/Translator"
 import {isMoment} from "moment";

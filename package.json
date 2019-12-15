@@ -65,6 +65,7 @@
     "i18next-xhr-backend": "^1.5.1",
     "identity-obj-proxy": "3.0.0",
     "input-moment": "^0.4.0",
+    "ismounted": "^0.1.1",
     "jest": "23.6.0",
     "jest-pnp-resolver": "1.0.1",
     "jest-resolve": "23.6.0",

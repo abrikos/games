@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {t} from "client/components/Translator"
 import {Button, Input, Label} from "reactstrap";
-import {navigate} from "hookrouter";
+import {A, navigate} from "hookrouter";
 import {Animated} from "react-animated-css";
 import GameNotLogged from "client/components/GameNotLogged";
 import MyBreadCrumb from "client/components/MyBreadCrumb";
@@ -10,11 +10,16 @@ import InputSelect from "client/components/InputSelect";
 export default function TableStart(props) {
     const [tables, setTables] = useState([]);
     const [options, setOptions] = useState([]);
-    const [tableUpdated, setTableUpdated] = useState();
-    props.onWsMessage(onWsMessage);
+    const [message, setMessage] = useState({});
+    //props.onWsMessage(onWsMessage);
 
     useEffect(() => {
         reloadTables();
+        setMessage(props.message);
+        setInterval(() => setMessage({}), 5000)
+    }, [props.message])
+
+    useEffect(() => {
         props.api(`/table/${props.game}/options`)
             .then(setOptions)
     }, [])
@@ -22,17 +27,6 @@ export default function TableStart(props) {
     function reloadTables() {
         props.api('/table/list/active/' + props.game)
             .then(setTables)
-    }
-
-    function onWsMessage(event) {
-        const data = JSON.parse(event.data);
-        console.log(data)
-        if (props.game !== data.game) return;
-
-        setTableUpdated(data.id);
-        setTimeout(() => setTableUpdated(null), 1000)
-        reloadTables();
-
     }
 
     function startGame(e) {
@@ -44,23 +38,16 @@ export default function TableStart(props) {
             })
     }
 
-    function joinTable(id) {
-        props.api('/table/join/' + id)
-            .then(res => {
-                navigate('/table/' + id)
-            })
-    }
-
     function imNotIn(g) {
         return !imIn(g)
     }
 
     function imIn(g) {
-        return g.players.includes(props.authenticatedUser._id);
+        return g.sites.map(s => s.player).includes(props.authenticatedUser._id);
     }
 
     function isTableUpdated(t) {
-        return t.id === tableUpdated
+        return message.id === t.id
     }
 
     function table(rows) {
@@ -80,9 +67,9 @@ export default function TableStart(props) {
                     <div>{g.name}</div>
                 </Animated> : g.name}</td>
                 <td><small>{g.updated}</small></td>
-                <td className="text-center">{g.players.length}</td>
+                <td className="text-center">{g.sitesActive.length} ({g.sites.length})</td>
                 <td className="text-center">{g.options.defaultBet}</td>
-                <td><Button onClick={() => joinTable(g.id)} color={isTableUpdated(g) ? 'primary' : 'success'}>{t('Play')}</Button></td>
+                <td><A href={`/table/${g.id}`} className="btn btn-primary">{t('View')}</A></td>
             </tr>)}
             </tbody>
         </table>
@@ -108,7 +95,7 @@ export default function TableStart(props) {
 
 
 function Option(props) {
-    function showValue(e){
+    function showValue(e) {
         const span = document.getElementById(`range-${e.target.name}`);
         span.innerText = e.target.value;
     }
@@ -120,13 +107,15 @@ function Option(props) {
             break;
 
         case "select":
-            control =  <InputSelect name={props.name} type={props.type} options={props.options.map(i=>{return i.value ? i :{label:i, value:i}})}  defaultValue={props.default.toString()}/>;
+            control = <InputSelect name={props.name} type={props.type} options={props.options.map(i => {
+                return i.value ? i : {label: i, value: i}
+            })} defaultValue={props.default.toString()}/>;
             break;
         default:
-            control =  <Input name={props.name} defaultValue={props.default} type={props.type} step={props.step}/>
+            control = <Input name={props.name} defaultValue={props.default} type={props.type} step={props.step}/>
     }
 
-    return <div><Label>{typeof props.label==='object' ? props.label : t(props.label)}</Label>{control}</div>
+    return <div><Label>{typeof props.label === 'object' ? props.label : t(props.label)}</Label>{control}</div>
 
 }
 

@@ -4,6 +4,7 @@ import Message from "server/db/models/Model-Message";
 import Filler from "server/db/models/Model-Filler";
 import Table from "server/db/models/Model-Table";
 import Log from "server/db/models/Model-Log";
+import Site from "server/db/models/Model-Site";
 
 const mongoose = require("mongoose");
 // подключение
@@ -23,7 +24,7 @@ const Mongoose = {
         if (!cookie.length) return false;
         return cookie.indexOf(model.cookieId) !== -1;
     },
-    User, Referral, Message, Filler, Table, Log
+    User, Referral, Message, Filler, Table, Log, Site
 
 };
 export default Mongoose;

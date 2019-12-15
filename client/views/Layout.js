@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import TopMenu from "client/components/TopMenu";
 //import 'bootstrap/dist/css/bootstrap.css';
 import 'client/views/style/main.sass';
@@ -11,14 +11,21 @@ import Loader from "client/components/Loader";
 
 
 export default function Layout(props) {
+    const [balance, setBalance] = useState({});
     let {children, alert, ...rest} = props;
+
+    function loadBalance() {
+        props.api('/cabinet/balance')
+            .then(setBalance)
+    }
+
 
     const menuItems = [
         {label: t('Home'), path: '/'},
-        {label: t('Dice'), path: '/Dice'},
+        {label: t('Poker'), path: '/Poker'},
         {label: t('Filler'), path: '/filler'},
         {label: t('BlackJack'), path: '/black-jack'},
-        {label: t('Cabinet'), path: '/cabinet', hidden: !props.authenticatedUser},
+        {label: `${props.authenticatedUser && props.authenticatedUser.first_name} (${balance.amount})`, path: '/cabinet', hidden: !props.authenticatedUser},
         {label: t('Login'), path: '/login', hidden: props.authenticatedUser},
         {label: t('Logout'), onClick: props.logOut, hidden: !props.authenticatedUser},
         {
@@ -31,10 +38,24 @@ export default function Layout(props) {
     useEffect(() => {
         props.checkAuth()
             .then(res => {
+                loadBalance();
                 //setLoading(false)
             })
 
     }, []);
+
+    useEffect(() => {
+        if(!props.message) return;
+        switch (props.message.action) {
+            case 'join':
+            case 'leave':
+            case 'stake/change':
+                loadBalance();
+                break;
+            default:
+        }
+
+    }, [props.message]);
 
 
     let routeResult = useRoutes(routes(props));

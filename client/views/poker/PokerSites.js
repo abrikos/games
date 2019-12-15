@@ -1,13 +1,13 @@
 import React, {useState} from 'react';
 import UserAvatar from "client/components/UserAvatar";
-import "./Dice.sass";
+import "./Poker.sass";
 import {Button} from "reactstrap";
 import {t} from "client/components/Translator"
 import Loader from "client/components/Loader";
 import StakeManage from "client/views/table/StakeManage";
-import MakeBet from "client/views/dice/MakeBet";
+import PokerMakeBet from "client/views/poker/MakeBet";
 
-export default function DiceTable(props) {
+export default function PokerSites(props) {
     const [sites, setSites] = useState(props.table.sites);
     props.onWsMessage(onWsMessage);
 

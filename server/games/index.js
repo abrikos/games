@@ -1,1 +1,1 @@
-export {default as Dice} from "./DiceLogic"
+export {default as Poker} from "./PokerLogic"

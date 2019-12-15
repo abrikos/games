@@ -4,36 +4,35 @@ import {Button, Input} from "reactstrap";
 import BootstrapSwitchButton from 'bootstrap-switch-button-react'
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faMinus, faPlus} from "@fortawesome/free-solid-svg-icons";
+import Loader from "client/components/Loader";
 //import ToggleButton from 'react-toggle-button'
 
 export default function StakeManage(props) {
-    const [balance, setBalance] = useState({})
-    const [stake, setStake] = useState(props.table.sites.find(s => s.player === props.authenticatedUser._id))
+    const [site, setSite] = useState( null);
     const [withdraw, setWithdraw] = useState(false)
     useEffect(() => {
-        props.api('/cabinet/balance/').then(setBalance)
+        props.api(`/table/${props.table.id}/site/player`)
+            .then(setSite)
 
     }, [])
 
     function addStake(e) {
         e.preventDefault();
         const form = props.formToObject(e.target);
-        props.api(`/table/${props.table.id}/change-stake`, form)
+        props.api(`/table/${props.table.id}/stake/change`, form)
             .then(res=>{
-                setStake(res.stake);
-                setBalance(res.balance)
+                setSite(res.site);
             })
-        console.log(form)
     }
 
-
+    if(!site) return <Loader/>
     return <div className="bet-interface">
-        <div>{t('Balance')}: {balance.amount}</div>
-        <div>{t('Stake')}: {stake.amount}</div>
+        <div>{t('Balance')}: {site.player.balance}</div>
+        <div>{t('Stake')}: {site.stake}</div>
         <form onSubmit={addStake}>
 
             <Input name={"amount"} autoComplete={"off"} type="number" step="any" defaultValue={props.table.options.blind * 100}/>
-            <input value={withdraw?-1:1} name="factor" hidden={true}/>
+            <input value={withdraw?-1:1} name="factor" hidden={true} readOnly/>
             {/*<InputSelect options={[{value:1, label: 'Add'},{value:-1, label:'Withdraw'}]} defaultValue={1} type={"radio"} onChange={console.log} name={"factor"}/>*/}
             <div>
                 <BootstrapSwitchButton
