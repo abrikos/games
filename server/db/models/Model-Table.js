@@ -96,8 +96,11 @@ modelSchema.methods.closePot = function () {
 
 modelSchema.methods.removePlayer = function (player) {
     const site = this.sitePlayer(player);
+    site.player.addBalance(site.stake);
+    site.player.save();
     site.player = null;
     site.data = null;
+    site.stake = 0;
 };
 
 modelSchema.methods.sitePlayer = function (player) {
@@ -150,15 +153,13 @@ modelSchema.virtual('currentPotSum')
         return this.currentBets.length ? this.currentBets.reduce((a, b) => a.value + b.value) : 0;
     });
 
+modelSchema.methods.newPot = function(){
+    this.pots.push({sum: 0})
+};
+
 modelSchema.virtual('currentPot')
     .get(function () {
-        let pot = this.pots.find(p => !p.closed);
-        if (!pot) {
-            pot = {sum: 0};
-            this.pots.push(pot)
-            pot = this.pots[0];
-        }
-        return pot;
+        return this.pots.find(p => !p.closed);
     });
 
 modelSchema.virtual('currentRound')

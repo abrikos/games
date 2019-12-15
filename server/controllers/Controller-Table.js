@@ -51,10 +51,8 @@ module.exports.controller = function (app) {
         Mongoose.Table.findById(req.params.id)
             .populate(Mongoose.Table.population)
             .then(table => {
-                const site = table.sitePlayer(req.session.userId);
-                site.player.addBalance(site.stake);
                 table.removePlayer(req.session.userId);
-                websocketSend('leave', table);
+                websocketSend('leave', table, req.session.userId);
                 if (!table.sitesActive.length) {
                     table.delete();
                     return res.sendStatus(200)
@@ -81,7 +79,7 @@ module.exports.controller = function (app) {
                         table.logicAddPlayer(user, req.params.site);
                         table.save()
                             .then(t => {
-                                websocketSend('join', t);
+                                websocketSend('join', t, req.session.userId);
                                 res.sendStatus(200)
                             })
                     })
@@ -104,8 +102,10 @@ module.exports.controller = function (app) {
                     //await site.save();
                     table.sites.push({})
                 }
+                table.newPot();
                 table.logicAddPlayer(user);
                 table.realMode = user.realMode;
+
                 table.save()
                     .then(g => {
                         websocketSend('create', table);
@@ -117,6 +117,8 @@ module.exports.controller = function (app) {
 
 
     });
+
+    //Mongoose.Table.deleteMany({}).then(console.log)
 
     app.post('/api/table/list/active/:game', (req, res) => {
         //Mongoose.User.findById(req.session.userId);
@@ -147,7 +149,7 @@ module.exports.controller = function (app) {
                 site.player.save();
                 table.save()
                     .then(t => {
-                        websocketSend('stake/change', table);
+                        websocketSend('stake/change', table, req.session.userId);
                         res.send({site, balance: {amount: site.player.balance}})
                     })
 
@@ -164,12 +166,12 @@ module.exports.controller = function (app) {
                 table.playerSite = table.sitePlayer(req.session.userId)
                 res.send(table)
             })
-            //.catch(e => res.send({error: 500, message: e.message}))
+        //.catch(e => res.send({error: 500, message: e.message}))
     });
 
-    function websocketSend(action, table) {
+    function websocketSend(action, table, player) {
         app.locals.wss.clients.forEach(function each(client) {
-            client.send(JSON.stringify({action, id: table.id, game: table.game, timestamp: new Date()}));
+            client.send(JSON.stringify({action, id: table.id, game: table.game, timestamp: new Date(), player: player}));
         });
     }
 };

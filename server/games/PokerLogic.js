@@ -44,14 +44,15 @@ export default {
         //this.logicStartupBet(player);
         //this.logicSetTurn(player)
         if (this.sitesActive.length === 2) {
-            this.logicPotStart()
+            this.logicGameStart()
         }
     },
 
-    logicPotStart() {
-        if (this.currentPot) return logger.warn('Current pot exists');
+    logicGameStart() {
+        //if (this.currentPot) return logger.warn('Current pot exists');
         if (this.sitesActive.length < 2) return  logger.warn('Active sites < 2');
         this.currentPot.data = {deck: deck()};
+        console.log(this.currentPot)
         for (const site of this.sites) {
             const c1 = this.currentPot.data.deck.pop();
             const c2 = this.currentPot.data.deck.pop();
@@ -76,7 +77,6 @@ export default {
         const site = this.sitePlayer(player)
         site.amount -= value;
         this.bets.push({player, round: this.currentRound, value});
-        this.logicSetTurn(player)
     },
 
     logicGetDefaultStake() {

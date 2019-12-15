@@ -46,6 +46,7 @@ export default function Layout(props) {
 
     useEffect(() => {
         if(!props.message) return;
+        if(props.message.player !== props.authenticatedUser._id) return;
         switch (props.message.action) {
             case 'join':
             case 'leave':
