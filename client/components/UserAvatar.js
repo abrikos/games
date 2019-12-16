@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import noUserImg from "client/images/nouser.png";
 import blockedImg from "client/images/telegram-blocked.svg";
+import PropTypes from "prop-types";
 
 export default function UserAvatar(props) {
     const [telegramAvailable, setTelegramAvailable] = useState(false)
@@ -19,10 +20,11 @@ export default function UserAvatar(props) {
             })
             .catch(error => setTelegramAvailable(false));
     };
-    useEffect(()=>{isAvailable()},[])
+    //useEffect(()=>{isAvailable()},[])
 
     if(!props.user) return <></>;
-    const photo = telegramAvailable ? props.user.photo_url || noUserImg : blockedImg;
+    //const photo = telegramAvailable ? props.user.photo_url || noUserImg : blockedImg;
+    const photo = props.user.photo_url || noUserImg ;
     return <div className={'user-avatar '+props.size}>
         <div className={'user-avatar-image'}><img src={photo} alt={props.user.first_name} title={props.user.first_name}/></div>
         <div className={'user-avatar-name'}>{props.user.first_name}</div>
@@ -30,5 +32,9 @@ export default function UserAvatar(props) {
 }
 
 
+UserAvatar.propTypes = {
+    user: PropTypes.object.isRequired,
+    size: PropTypes.string,
+};
 
 

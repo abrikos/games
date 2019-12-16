@@ -2,30 +2,43 @@ import React, {useEffect, useState} from 'react';
 import AccessDenied from "client/service/access-denied";
 import {t} from "client/components/Translator"
 import MyBreadCrumb from "client/components/MyBreadCrumb";
-import {A} from "hookrouter";
-import {Nav, NavItem} from "reactstrap";
+import {Button, Input} from "reactstrap";
+import UserAvatar from "client/components/UserAvatar";
 
 export default function Cabinet(props) {
     if (!props.authenticatedUser) return <AccessDenied/>;
-    const [fillers, setFillers] = useState();
+    const [user, setUser] = useState({});
+    const [avatar, setAvatar] = useState(props.authenticatedUser.photo_url);
 
-    useEffect(() => {
-        props.api('/filler/user/list')
-            .then(u => setFillers(u))
-    }, []);
+    useEffect(()=>{
+        loadUser()
+    },[]);
+
+    function loadUser() {
+        props.api('/cabinet/user')
+            .then(setUser)
+    }
+
+    function avatarSave() {
+        props.api('/cabinet/avatar/save',{avatar})
+            .then(setUser)
+    }
 
     return <div>
         <MyBreadCrumb items={[
             {label: t('Cabinet')},
         ]}/>
 
-        {fillers && <div>
-            <h2>{t('Filler')}</h2>
-            <h4>{t('My')}</h4>
-            {fillers.my.map(f=><div key={f.id}><A href={`/filler/${f.id}`}>{f.player.name} {f.opponent ? 'vs ' + f.opponent.name : ''}</A></div>)}
-            <h4>{t('Accepted')}</h4>
-            {fillers.accepted.map(f=><div key={f.id}><A href={`/filler/${f.id}`}>{f.player.name} vs {f.opponent.name}</A></div>)}
-        </div>}
+
+        <div className="text-center"><UserAvatar user={user}/></div>
+
+        <div className="input-group mb-3">
+            <input type="text" className="form-control" placeholder="Avatar URL" aria-label="Имя получателя" aria-describedby="basic-addon2" defaultValue={user.photo_url} onChange={e=>setAvatar(e.target.value)}/>
+                <div className="input-group-append">
+                    <Button onClick={avatarSave} className="input-group-text" id="basic-addon2">{t('Change avatar')}</Button>
+                </div>
+        </div>
+        {avatar!==props.authenticatedUser.photo_url && <img src={avatar} alt="new image" style={{maxWidth:150, maxHeight:150}}/>}
     </div>
 
 }

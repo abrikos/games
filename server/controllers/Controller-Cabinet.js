@@ -38,8 +38,18 @@ module.exports.controller = function (app) {
         res.send(`${process.env.SITE}/api/invite/${req.session.userId}`)
     });
 
-    app.post('/api/cabinet/info', passportLib.isLogged, (req, res) => {
-        res.send(req.session.passport.user)
+    app.post('/api/cabinet/user', passportLib.isLogged, (req, res) => {
+        Mongoose.User.findById(req.session.userId)
+            .then(user=>res.send(user))
+    });
+
+    app.post('/api/cabinet/avatar/save', passportLib.isLogged, (req, res) => {
+        Mongoose.User.findById(req.session.userId)
+            .then(user=>{
+                user.photo_url = req.body.avatar;
+                user.save();
+                res.send(user)
+            })
     });
 
     app.post('/api/cabinet/update/default-group/:gid', passportLib.isLogged, (req, res) => {
