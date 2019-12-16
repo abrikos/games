@@ -5,6 +5,9 @@ import Filler from "server/db/models/Model-Filler";
 import Table from "server/db/models/Model-Table";
 import Log from "server/db/models/Model-Log";
 import Site from "server/db/models/Model-Site";
+import Pot from "server/db/models/Model-Pot";
+import Round from "server/db/models/Model-Round";
+import Bet from "server/db/models/Model-Bet";
 
 const mongoose = require("mongoose");
 // подключение
@@ -24,7 +27,7 @@ const Mongoose = {
         if (!cookie.length) return false;
         return cookie.indexOf(model.cookieId) !== -1;
     },
-    User, Referral, Message, Filler, Table, Log, Site
+    User, Referral, Message, Filler, Table, Log, Site, Pot, Round, Bet
 
 };
 export default Mongoose;

@@ -5,7 +5,7 @@ import {Button} from "reactstrap";
 import {t} from "client/components/Translator"
 import Loader from "client/components/Loader";
 import StakeManage from "client/views/table/StakeManage";
-import PokerMakeBet from "client/views/poker/PokerMakeBet";
+import PokerBet from "client/views/poker/PokerBet";
 import * as Cards from "client/images/cards"
 
 
@@ -43,14 +43,14 @@ export default function PokerTable(props) {
                 <UserAvatar user={mySite.player} {...props}/>
                 <div>
                     {table.playerSite && <div>
-                        {/*<CardImages {...table.playerSite}/>*/}
-                        {/*{table.playerBet && <div className="current-bet">Bet: {table.playerBet.value}</div>}*/}
+                        <CardImages {...table.playerSite}/>
+                        {table.playerBet && <div className="current-bet">Bet: {table.playerBet.value}</div>}
                     </div>}
 
                 </div>
 
 
-                {table.playerSite.turn && <PokerMakeBet table={table} {...props}/>}
+                {table.playerSite.turn && table.playerBet && <PokerBet table={table} {...props}/>}
             </div>
             <div className="col-4">
                 <StakeManage table={table} {...props}/>

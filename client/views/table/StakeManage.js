@@ -14,7 +14,7 @@ export default function StakeManage(props) {
         props.api(`/table/${props.table.id}/site/player`)
             .then(setSite)
 
-    }, [])
+    }, [props.message])
 
     function addStake(e) {
         e.preventDefault();

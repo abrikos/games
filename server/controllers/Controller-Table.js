@@ -3,8 +3,8 @@ import {rword} from 'rword';
 import * as Games from "server/games";
 
 const passportLib = require('server/lib/passport');
-const passport = require('passport');
 const logger = require('logat');
+
 
 module.exports.controller = function (app) {
 
@@ -46,20 +46,19 @@ module.exports.controller = function (app) {
             .catch(e => res.send({error: 500, message: e.message}))
     });
 
-
     app.post('/api/table/:id/leave', passportLib.isLogged, (req, res) => {
         Mongoose.Table.findById(req.params.id)
             .populate(Mongoose.Table.population)
-            .then(table => {
-                table.removePlayer(req.session.userId);
+            .then(async table => {
+                table.extendLogic();
                 websocketSend('leave', table, req.session.userId);
-                if (!table.sitesActive.length) {
+                await table.logicRemovePlayer(req.session.userId);
+
+                if (table.sitesActive.length === 0) {
                     table.delete();
                     return res.sendStatus(200)
                 }
-                if (table.sitesActive.length === 1) {
-                    table.logicRefundBets();
-                }
+                if (table.sitesActive.length === 1) await table.logicReturnBet(table.sitesActive[0].player);
                 table.save();
                 res.sendStatus(200);
             })
@@ -69,9 +68,9 @@ module.exports.controller = function (app) {
     app.post('/api/table/:id/bet', passportLib.isLogged, (req, res) => {
         Mongoose.Table.findById(req.params.id)
             .populate(Mongoose.Table.population)
-            .then(table => {
+            .then(async table => {
                 table.extendLogic();
-                if(!table.logicPlayerBet(req.body.bet, req.session.userId)) return res.sendStatus(406);
+                if (!await table.logicPlayerBet(req.body.bet, req.session.userId)) return res.sendStatus(406);
                 table.save();
                 websocketSend('bet', table);
                 res.sendStatus(200)
@@ -98,7 +97,7 @@ module.exports.controller = function (app) {
         //.catch(e => res.send({error: 500, message: e.message}))
     });
 
-    app.post('/api/table/create/:game', passportLib.isLogged, (req, res) => {
+    app.post('/api/table/create/:game', passportLib.isLogged, async (req, res) => {
         const table = new Mongoose.Table({game: req.params.game});
         table.extendLogic();
         if (!table.logicAttached) return res.sendStatus(406);
@@ -106,34 +105,40 @@ module.exports.controller = function (app) {
         table.name = words.replace(/^./, words[0].toUpperCase());
         table.options = table.logicCheckOptions(req.body);
 
-        Mongoose.User.findById(req.session.userId)
-            .then(async user => {
-                for (let position = 0; position < table.maxPlayers; position++) {
-                    //const site = new Mongoose.Site({table});
-                    //await site.save();
-                    table.sites.push({position})
-                }
-                table.newPot();
-                table.logicTakeSite(user);
-                table.realMode = user.realMode;
+        const user = await Mongoose.User.findById(req.session.userId)
 
-                table.save()
-                    .then(g => {
-                        websocketSend('create', table);
-                        res.send({id: table.id})
-                    })
-                    .catch(e => res.send({error: 500, message: e.message}))
-            })
-            .catch(e => res.send({error: 500, message: e.message}))
+        for (let position = 0; position < table.maxPlayers; position++) {
+            const player = position ? null : user;
+            await Mongoose.Site.create({table, position, player});
+            //const site = new Mongoose.Site({table});
+            //await site.save();
+            //table.sites.push({position})
+        }
+        const pot = await Mongoose.Pot.create({table})
+        await Mongoose.Round.create({pot})
+        table.realMode = user.realMode;
+        await table.save()
+        await table.populate(Mongoose.Table.population).execPopulate()
+        table.extendLogic();
+        await table.logicTakeSite(user);
+        websocketSend('create', table);
+        res.send({id: table.id})
+        //.catch(e => res.send({error: 500, message: e.message}))
+
+        //.catch(e => res.send({error: 500, message: e.message}))
 
 
     });
 
+    //Mongoose.Bet.find({round:"5df78d95d2c18502cd14af8b"}).sort({createdAt:-1}).then(console.log)
+    //Mongoose.Round.findById("5df78d95d2c18502cd14af8b").populate('bets').then(console.log)
+    //Mongoose.Table.findOne().sort({createdAt:-1}).populate(Mongoose.Table.population).then(t=>console.log(t.playerBet));
     //Mongoose.Table.deleteMany({}).then(console.log)
 
     app.post('/api/table/list/active/:game', (req, res) => {
         //Mongoose.User.findById(req.session.userId);
         Mongoose.Table.find({active: true, game: req.params.game})
+            .populate(Mongoose.Table.population)
             .sort({updatedAt: -1})
             .then(tables => {
                 res.send(tables)
@@ -170,11 +175,12 @@ module.exports.controller = function (app) {
 
 
     app.post('/api/table/:id', passportLib.isLogged, (req, res) => {
+
         Mongoose.Table.findById(req.params.id)
-            .populate('sites.player')
+            .populate(Mongoose.Table.population)
             .then(table => {
                 //table.logicHideOtherPlayers(req.session.userid);
-                table.playerSite = table.siteOfPlayer(req.session.userId)
+                table.playerSite = table.siteOfPlayer(req.session.userId);
                 res.send(table)
             })
         //.catch(e => res.send({error: 500, message: e.message}))

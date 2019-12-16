@@ -1,3 +1,6 @@
+import Mongoose from "server/db/Mongoose";
+
+const async = require("async");
 const logger = require('logat');
 const suits = ['S', 'C', 'D', 'H'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -31,68 +34,81 @@ export default {
         }
     },
 
-    logicTakeSite(player, siteId) {
+    async logicTakeSite(player, siteId) {
         //this.players.push(player)
-        const stake = this.logicGetDefaultStake();
-        let site = this.sites.find(s=>s._id.toString() === siteId);
-        if(!site) site = this.sites[0];
+        const stake = this._logicGetDefaultStake();
+        let site = this.sites.find(s => s._id.toString() === siteId);
+        if (!site) site = this.sites[0];
         site.player = player;
         site.stake = stake;
-        //site.save()
+        await site.save();
         player.addBalance(-stake);
-        player.save();
-        //this.logicStartupBet(player);
-        //this.logicSetTurn(player)
+        await player.save();
         if (this.sitesActive.length === 2) {
-            this._logicGameStart()
+            await this._blindsBet()
         }
     },
 
-    _logicGameStart() {
+    async _blindsBet() {
+        logger.info('START POKER')
         //if (this.currentPot) return logger.warn('Current pot exists');
-        if (this.sitesActive.length < 2) return  logger.warn('Active sites < 2');
-        this.currentPot.data = {deck: _deck()};
-        for (const site of this.sites) {
-            const c1 = this.currentPot.data.deck.pop();
-            const c2 = this.currentPot.data.deck.pop();
+        if (this.sitesActive.length < 2) return logger.warn('Active sites < 2');
+        this.pot.data = {deck: _deck()};
+        for await (const site of this.sitesActive) {
+            const c1 = this.pot.data.deck.pop();
+            const c2 = this.pot.data.deck.pop();
             site.data = {c1, c2}
-            //site.save()
+            await site.save()
         }
-        if (this.sitesActive.length === 2) {
-            this.sites[0].turn = true;
-            this._logicBet(this.options.blind, this.sites[0]);
-            this._logicBet(this.options.blind * 2, this.sites[1]);
-        } else if(this.sitesActive.length>2){
-            this.sites[2].turn = true;
-        }
+
+        this.sites[0].turn = true;
+        await this.sites[0].save();
+        await this.logicPlayerBet(this.options.blind, this.sitesActive[0].player);
+        await this.logicPlayerBet(this.options.blind * 2, this.sitesActive[1].player);
+
     },
 
-    logicRefundBets() {
-        throw 'HOW to REFUND BETS?'
-        for(const bet of this.currentBets){
-
-        }
-        //this.currentPot.closed = true;
-    },
-
-
-    logicPlayerBet(value, player) {
+    async logicReturnBet(player) {
         const site = this.siteOfPlayer(player);
-        if(!site.turn) return false;
-        const lastBet = this.betOfPlayer(player);
-        if(this.maxBet.value > lastBet.value + value) return false;
-        this._logicBet(value, site);
+        const bet = this.betOfPlayer(player);
+        site.data = null;
         site.turn = false;
-        this.nextTurnSite.turn = true;
+        if (bet) {
+            site.stake += bet.value;
+            site.player.addBalance(bet.value);
+            await site.player.save();
+            await bet.delete();
+        }
+        await site.save()
+    },
+
+    async logicRemovePlayer(player) {
+        await this.logicReturnBet(player);
+        const site = this.siteOfPlayer(player);
+        site.player.addBalance(site.stake);
+        site.player = null;
+        site.data = null;
+        site.stake = 0;
+        await site.save();
+    },
+
+
+    async logicPlayerBet(value, player) {
+        logger.info("BET", value)
+        const site = this.siteOfPlayer(player);
+        const lastBet = this.betOfPlayer(player);
+        if (lastBet && this.maxBet.value > lastBet.value + value) return false;
+        site.stake -= value;
+        site.turn = false;
+        await Mongoose.Bet.create({site, round: this.round, value});
+        await site.save();
+        this.siteNextTurn.turn = true;
+        await this.siteNextTurn.save();
         return true;
     },
 
-    _logicBet(value, site) {
-        site.amount -= value;
-        this.bets.push({site, round: this.currentRound, value});
-    },
 
-    logicGetDefaultStake() {
+    _logicGetDefaultStake() {
         return this.options.blind * 100;
     },
 

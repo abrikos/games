@@ -6,7 +6,7 @@ export default function UserAvatar(props) {
     const [telegramAvailable, setTelegramAvailable] = useState(false)
     function isAvailable(){
         const timeout = new Promise((resolve, reject) => {
-            setTimeout(reject, 400, 'Request timed out');
+            setTimeout(reject, 1400, 'Request timed out');
         });
 
         const request = fetch('https://t.me', {mode: 'no-cors'});

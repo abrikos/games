@@ -6,7 +6,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faMinus, faPlus} from "@fortawesome/free-solid-svg-icons";
 //import ToggleButton from 'react-toggle-button'
 
-export default function PokerMakeBet(props) {
+export default function PokerBet(props) {
     //const [site, setSite] = useState(props.table.playerSite);
     const maxBetValue = props.table.maxBet.value;
     const currentBetValue = props.table.playerBet.value;

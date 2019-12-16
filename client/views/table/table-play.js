@@ -9,16 +9,18 @@ import PokerTable from "client/views/poker/PokerTable";
 
 export default function TablePlay(props) {
     //const componentIsMounted = React.useRef(true);
-    const [table, setTable] = useState({});
+    const [table, setTable] = useState();
     //const { message } = React.useContext(props.Context);
     //props.onWsMessage(onWsMessage);
 
     //console.log('CONTEXT', message)
 
     useEffect(() => {
-        if(props.message.id!==table.id) return;
+        if(props.message && table && props.message.id!==table.id) return;
         loadTable();
     }, [props.message]);
+
+
 
     function loadTable() {
         //if(!componentIsMounted.current) return;
@@ -30,13 +32,14 @@ export default function TablePlay(props) {
     }
 
 
-    if (!table.id) return <Loader/>;
+    if (!table) return <Loader/>;
     if (!props.authenticatedUser) return <GameNotLogged game={table.game} {...props}/>;
     return <div>
         <MyBreadCrumb items={[{href: '/' + table.game, label: table.game}, {label: table.name}]}/>
         <h1>{t('Play')} {t(table.game)} "{table.name}"</h1>
+        {table.playerSite && <A href={`/table/${table.id}/${table.game}/leave`} className="btn btn-warning text-right">{t('Leave')}</A>}
         {table.game === 'Poker' && <PokerTable table={table} {...props}/>}
-        {table.playerSite && <A href={`/table/${table.id}/${table.game}/leave`} className="btn btn-link">{t('Leave')}</A>}
+
     </div>;
 }
 
