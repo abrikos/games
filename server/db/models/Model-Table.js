@@ -16,8 +16,6 @@ const roundSchema = new Schema({
     },
     {
         timestamps: {createdAt: 'createdAt'},
-        toObject: {virtuals: true},
-        toJSON: {virtuals: true}
     });
 
 const potSchema = new Schema({
@@ -27,8 +25,6 @@ const potSchema = new Schema({
     },
     {
         timestamps: {createdAt: 'createdAt'},
-        toObject: {virtuals: true},
-        toJSON: {virtuals: true}
     });
 
 const betSchema = new Schema({
@@ -40,20 +36,18 @@ const betSchema = new Schema({
     },
     {
         timestamps: {createdAt: 'createdAt'},
-        toObject: {virtuals: true},
-        toJSON: {virtuals: true}
     });
 
 
 const siteSchema = new Schema({
         player: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
         stake: {type: Number, default: 0},
+        position: {type: Number, default: 0},
+        turn: {type: Boolean, default: false},
         data: Object
     },
     {
         timestamps: {createdAt: 'createdAt'},
-        toObject: {virtuals: true},
-        toJSON: {virtuals: true}
     });
 
 
@@ -95,7 +89,7 @@ modelSchema.methods.closePot = function () {
 };
 
 modelSchema.methods.removePlayer = function (player) {
-    const site = this.sitePlayer(player);
+    const site = this.siteOfPlayer(player);
     site.player.addBalance(site.stake);
     site.player.save();
     site.player = null;
@@ -103,10 +97,16 @@ modelSchema.methods.removePlayer = function (player) {
     site.stake = 0;
 };
 
-modelSchema.methods.sitePlayer = function (player) {
+modelSchema.methods.siteOfPlayer = function (player) {
     const site = this.sites.find(s => this.comparePlayers(s.player, player));
     if (!site) return null;
     return site;
+};
+
+modelSchema.methods.betOfPlayer = function (player) {
+    const site = this.siteOfPlayer(player)
+    return this.currentBets.find(b => b.site.equals(site._id));
+
 };
 
 modelSchema.methods.comparePlayers = function (p1, p2) {
@@ -133,32 +133,52 @@ modelSchema.virtual('waitPlayer')
         return this.options.waitPlayer || WAIT_PLAYER
     });
 
-modelSchema.virtual('nextTurnSite')
-    .get(function () {
-        let idx = this.sites.map(s => s._id).indexOf(this.currentTurnSite._id);
-        if (idx + 1 >= this.sites.length) idx = -1;
-        return this.sites[idx + 1];
-
-    });
-
 modelSchema.virtual('currentTurnSite')
     .get(function () {
-        const site =  this.sites.find(s=>s._id === this.currentRound.siteTurn);
-        if(!site) return this.sites[0]
-        return site;
+        return this.sites.find(s => s.turn);
     });
+
+modelSchema.virtual('nextTurnSite')
+    .get(function () {
+        if (!this.currentTurnSite || this.currentTurnSite.position + 1 >= this.sites.length) return this.sites[0];
+        return this.sites[this.currentTurnSite + 1];
+
+    });
+
+modelSchema.virtual('playerBet')
+    .get(function () {
+        if (!this.playerSite) return null;
+        return this.betOfPlayer(this.playerSite.player);
+    });
+
+modelSchema.virtual('maxBet')
+    .get(function () {
+        let max = { value:0};
+        for(const bet of this.currentBets){
+            if(bet.value> max.value) max = bet;
+        }
+        return max;
+    });
+
+modelSchema.virtual('currentBets')
+    .get(function () {
+        if(!this.currentRound) return[];
+        return  this.bets.filter(r =>r.round.equals(this.currentRound._id));
+    });
+
 
 modelSchema.virtual('currentPotSum')
     .get(function () {
         return this.currentBets.length ? this.currentBets.reduce((a, b) => a.value + b.value) : 0;
     });
 
-modelSchema.methods.newPot = function(){
+modelSchema.methods.newPot = function () {
     this.pots.push({sum: 0})
 };
 
 modelSchema.virtual('currentPot')
     .get(function () {
+
         return this.pots.find(p => !p.closed);
     });
 
@@ -169,7 +189,9 @@ modelSchema.virtual('currentRound')
 
 modelSchema.virtual('currentPotRounds')
     .get(function () {
-        let rounds = this.rounds.filter(r => r.pot === this.currentPot._id);
+        if(!this.currentPot) return [];
+        let rounds = this.rounds.filter(r => r.pot.equals(this.currentPot._id));
+
         if (!rounds.length) {
             this.rounds.push({pot: this.currentPot});
             rounds = this.rounds;
@@ -177,10 +199,6 @@ modelSchema.virtual('currentPotRounds')
         return rounds;
     });
 
-modelSchema.virtual('currentBets')
-    .get(function () {
-        return this.bets.filter(r => r.round === this.currentRound.id);
-    });
 
 modelSchema.virtual('sitesActive')
     .get(function () {

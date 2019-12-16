@@ -2,7 +2,7 @@ const logger = require('logat');
 const suits = ['S', 'C', 'D', 'H'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-function deck() {
+function _deck() {
     const d = [];
     for (const s of suits) {
         for (const v of values) {
@@ -31,10 +31,10 @@ export default {
         }
     },
 
-     logicAddPlayer(player, siteId) {
+    logicTakeSite(player, siteId) {
         //this.players.push(player)
         const stake = this.logicGetDefaultStake();
-        let site = this.sites.find(s=>s.id === siteId);
+        let site = this.sites.find(s=>s._id.toString() === siteId);
         if(!site) site = this.sites[0];
         site.player = player;
         site.stake = stake;
@@ -44,15 +44,14 @@ export default {
         //this.logicStartupBet(player);
         //this.logicSetTurn(player)
         if (this.sitesActive.length === 2) {
-            this.logicGameStart()
+            this._logicGameStart()
         }
     },
 
-    logicGameStart() {
+    _logicGameStart() {
         //if (this.currentPot) return logger.warn('Current pot exists');
         if (this.sitesActive.length < 2) return  logger.warn('Active sites < 2');
-        this.currentPot.data = {deck: deck()};
-        console.log(this.currentPot)
+        this.currentPot.data = {deck: _deck()};
         for (const site of this.sites) {
             const c1 = this.currentPot.data.deck.pop();
             const c2 = this.currentPot.data.deck.pop();
@@ -60,23 +59,37 @@ export default {
             //site.save()
         }
         if (this.sitesActive.length === 2) {
-            this.currentRound.siteTurn = this.sites[0];
-            this.logicBet(this.options.blind, this.sites[0].player);
-            this.logicBet(this.options.blind * 2, this.sites[1].player);
+            this.sites[0].turn = true;
+            this._logicBet(this.options.blind, this.sites[0]);
+            this._logicBet(this.options.blind * 2, this.sites[1]);
         } else if(this.sitesActive.length>2){
-            this.currentRound.siteTurn = this.sites[2]
+            this.sites[2].turn = true;
         }
     },
 
-    logicPotFinish() {
-        this.currentPot.closed = true;
+    logicRefundBets() {
+        throw 'HOW to REFUND BETS?'
+        for(const bet of this.currentBets){
+
+        }
+        //this.currentPot.closed = true;
     },
 
 
-    logicBet(value, player) {
-        const site = this.sitePlayer(player)
+    logicPlayerBet(value, player) {
+        const site = this.siteOfPlayer(player);
+        if(!site.turn) return false;
+        const lastBet = this.betOfPlayer(player);
+        if(this.maxBet.value > lastBet.value + value) return false;
+        this._logicBet(value, site);
+        site.turn = false;
+        this.nextTurnSite.turn = true;
+        return true;
+    },
+
+    _logicBet(value, site) {
         site.amount -= value;
-        this.bets.push({player, round: this.currentRound, value});
+        this.bets.push({site, round: this.currentRound, value});
     },
 
     logicGetDefaultStake() {

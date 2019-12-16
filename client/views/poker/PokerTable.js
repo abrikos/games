@@ -23,8 +23,8 @@ export default function PokerTable(props) {
 
     function CardImages(site) {
         return site.data ? <span>
-            <img className="poker-card" src={Cards[site.data.c1]} alt="Cover"/>
-                        <img className="poker-card" src={Cards[site.data.c2]} alt="Cover"/>
+            <img className="poker-card" src={Cards[site.data.c1 || 'cover']} alt="Cover"/>
+                        <img className="poker-card" src={Cards[site.data.c2 || 'cover']} alt="Cover"/>
         </span> : <span/>
     }
 
@@ -37,11 +37,20 @@ export default function PokerTable(props) {
             <div className="col-4">
 
             </div>
-            <div className="col-4">
+            <div className="col-4 bet-control">
                 Default bet {table.options.defaultBet}
                 <hr/>
                 <UserAvatar user={mySite.player} {...props}/>
-                {table.playerSite === table.currentTurnSite && <PokerMakeBet table={table} {...props}/>}
+                <div>
+                    {table.playerSite && <div>
+                        {/*<CardImages {...table.playerSite}/>*/}
+                        {/*{table.playerBet && <div className="current-bet">Bet: {table.playerBet.value}</div>}*/}
+                    </div>}
+
+                </div>
+
+
+                {table.playerSite.turn && <PokerMakeBet table={table} {...props}/>}
             </div>
             <div className="col-4">
                 <StakeManage table={table} {...props}/>
@@ -57,7 +66,7 @@ export default function PokerTable(props) {
                         <strong>{s.stake}</strong>
                         <CardImages {...s}/>
                     </div> : <div>
-                        {mySite ? 'Empty' : <Button onClick={() => joinTable(s.id)} color="success">{t('Sit here')}</Button>}
+                        {mySite ? 'Empty' : <Button onClick={() => joinTable(s._id)} color="success">{t('Sit here')}</Button>}
                     </div>}
 
                 </div>)}

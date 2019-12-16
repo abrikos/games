@@ -9,13 +9,14 @@ import PokerTable from "client/views/poker/PokerTable";
 
 export default function TablePlay(props) {
     //const componentIsMounted = React.useRef(true);
-    const [table, setTable] = useState();
+    const [table, setTable] = useState({});
     //const { message } = React.useContext(props.Context);
     //props.onWsMessage(onWsMessage);
 
     //console.log('CONTEXT', message)
 
     useEffect(() => {
+        if(props.message.id!==table.id) return;
         loadTable();
     }, [props.message]);
 
@@ -29,7 +30,7 @@ export default function TablePlay(props) {
     }
 
 
-    if (!table) return <Loader/>;
+    if (!table.id) return <Loader/>;
     if (!props.authenticatedUser) return <GameNotLogged game={table.game} {...props}/>;
     return <div>
         <MyBreadCrumb items={[{href: '/' + table.game, label: table.game}, {label: table.name}]}/>

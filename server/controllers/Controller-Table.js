@@ -58,13 +58,24 @@ module.exports.controller = function (app) {
                     return res.sendStatus(200)
                 }
                 if (table.sitesActive.length === 1) {
-                    table.closePot();
+                    table.logicRefundBets();
                 }
                 table.save();
-                console.log('USER LEAVE')
                 res.sendStatus(200);
             })
             .catch(e => res.send({error: 500, message: e.message}))
+    });
+
+    app.post('/api/table/:id/bet', passportLib.isLogged, (req, res) => {
+        Mongoose.Table.findById(req.params.id)
+            .populate(Mongoose.Table.population)
+            .then(table => {
+                table.extendLogic();
+                if(!table.logicPlayerBet(req.body.bet, req.session.userId)) return res.sendStatus(406);
+                table.save();
+                websocketSend('bet', table);
+                res.sendStatus(200)
+            });
     });
 
     app.post('/api/table/:id/join/site/:site', passportLib.isLogged, (req, res) => {
@@ -73,10 +84,10 @@ module.exports.controller = function (app) {
             .then(table => {
                 Mongoose.User.findById(req.session.userId)
                     .then(user => {
-                        if (table.sitePlayer(user.id)) return res.sendStatus(200);
+                        if (table.siteOfPlayer(user.id)) return res.sendStatus(200);
                         if (!table.canJoin) return res.send({error: 500, message: 'Table is full'});
                         table.extendLogic();
-                        table.logicAddPlayer(user, req.params.site);
+                        table.logicTakeSite(user, req.params.site);
                         table.save()
                             .then(t => {
                                 websocketSend('join', t, req.session.userId);
@@ -97,13 +108,13 @@ module.exports.controller = function (app) {
 
         Mongoose.User.findById(req.session.userId)
             .then(async user => {
-                for (let i = 0; i < table.maxPlayers; i++) {
+                for (let position = 0; position < table.maxPlayers; position++) {
                     //const site = new Mongoose.Site({table});
                     //await site.save();
-                    table.sites.push({})
+                    table.sites.push({position})
                 }
                 table.newPot();
-                table.logicAddPlayer(user);
+                table.logicTakeSite(user);
                 table.realMode = user.realMode;
 
                 table.save()
@@ -133,7 +144,7 @@ module.exports.controller = function (app) {
         Mongoose.Table.findById(req.params.id)
             .populate(Mongoose.Table.population)
             .then(table => {
-                res.send(table.sitePlayer(req.session.userId));
+                res.send(table.siteOfPlayer(req.session.userId));
             })
             .catch(e => res.send({error: 500, message: e.message}))
     });
@@ -142,7 +153,7 @@ module.exports.controller = function (app) {
         Mongoose.Table.findById(req.params.id)
             .populate(Mongoose.Table.population)
             .then(table => {
-                const site = table.sitePlayer(req.session.userId);
+                const site = table.siteOfPlayer(req.session.userId);
                 const amount = req.body.amount * req.body.factor;
                 site.stake += amount;
                 site.player.addBalance(-amount);
@@ -163,7 +174,7 @@ module.exports.controller = function (app) {
             .populate('sites.player')
             .then(table => {
                 //table.logicHideOtherPlayers(req.session.userid);
-                table.playerSite = table.sitePlayer(req.session.userId)
+                table.playerSite = table.siteOfPlayer(req.session.userId)
                 res.send(table)
             })
         //.catch(e => res.send({error: 500, message: e.message}))

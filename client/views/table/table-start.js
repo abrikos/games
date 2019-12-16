@@ -11,21 +11,17 @@ export default function TableStart(props) {
     const [tables, setTables] = useState([]);
     const [options, setOptions] = useState([]);
     const [message, setMessage] = useState({});
-    const [createdId, setCreatedId] = useState(0);
 
-    useEffect(() => {
-
-        console.log('ZZZZZZZZZZZZZZZZzz',createdId,props.message.id)
-
+    useEffect((x) => {
+        console.log('ZZZZZZZZZZZZZZZZZ',props.message)
         if(props.message && !['join','leave','create'].includes(props.message.action)) return;
-        if(props.message.action === 'create' && createdId===props.message.id){
-            console.log('GO TO GAME')
-            return navigate('/table/' + createdId)
-        }
         reloadTables();
         setMessage(props.message);
         setInterval(() => setMessage({}), 2000)
-    }, [props.message, createdId]);
+        return () => {
+            console.log('will unmount', x);
+        }
+    }, [props.message]);
 
     useEffect(() => {
         reloadTables();
@@ -43,8 +39,7 @@ export default function TableStart(props) {
         e.preventDefault();
         props.api('/table/create/' + props.game, props.formToObject(e.target))
             .then(res => {
-                setCreatedId(res.id)
-
+                navigate('/table/' + res.id)
             })
     }
 
@@ -87,7 +82,6 @@ export default function TableStart(props) {
 
     if (!props.authenticatedUser) return <GameNotLogged game={props.game} {...props}/>
     return <div>
-        {JSON.stringify(props.message)}
         <MyBreadCrumb items={[{label: props.game}]}/>
         <h1>{props.game}. {t('List of tables')}</h1>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css"/>
