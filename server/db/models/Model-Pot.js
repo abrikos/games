@@ -5,6 +5,7 @@ const logger = require('logat');
 
 const modelSchema = new Schema({
     table: {type: mongoose.Schema.Types.ObjectId, ref: 'Table', required: true},
+    sites: [{type: mongoose.Schema.Types.ObjectId, ref:'Site'}],
     data: Object,
     closed: Boolean
 }, {

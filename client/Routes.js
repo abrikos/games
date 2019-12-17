@@ -2,9 +2,9 @@ import React from "react";
 import Home from "client/views/home/home";
 import Login from "client/views/login";
 import Cabinet from "client/views/cabinet";
-import TablePlay from "client/views/table/table-play";
-import TableStart from "client/views/table/table-start";
-import TableLeaveConfirm from "client/views/table/table-leave-confirm";
+import PokerList from "client/views/poker/poker-list";
+import PokerLeaveConfirm from "client/views/poker/poker-leave-confirm";
+import PokerPlay from "client/views/poker/poker-play";
 
 export default function Routes(props){
 
@@ -12,9 +12,9 @@ export default function Routes(props){
         "/": () => <Home {...props}/>,
         "/cabinet": () => <Cabinet {...props}/>,
         "/login": () => <Login {...props}/>,
-        "/Poker": () => <TableStart game={'Poker'} {...props}/>,
-        "/table/:id": (params) => <TablePlay {...params} {...props}/>,
-        "/table/:id/:game/leave": (params) => <TableLeaveConfirm {...params} {...props}/>,
+        "/poker": () => <PokerList game={'Poker'} {...props}/>,
+        "/poker/:id": (params) => <PokerPlay {...params} {...props}/>,
+        "/poker/:id/leave": (params) => <PokerLeaveConfirm {...params} {...props}/>,
         //"/filler": () => <HomeFiller {...props}/>,
 
         //"/filler/:id": (params) => <FillerField {...params}  {...props}/>,

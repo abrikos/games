@@ -5,6 +5,7 @@ const logger = require('logat');
 
 const modelSchema = new Schema({
     pot: {type: mongoose.Schema.Types.ObjectId, ref:'Pot', required: true},
+    turn: {type: mongoose.Schema.Types.ObjectId, ref:'Site'},
     data: Object,
     closed: Boolean
 }, {

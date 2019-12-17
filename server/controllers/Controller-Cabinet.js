@@ -43,10 +43,11 @@ module.exports.controller = function (app) {
             .then(user=>res.send(user))
     });
 
-    app.post('/api/cabinet/avatar/save', passportLib.isLogged, (req, res) => {
+    app.post('/api/cabinet/user/save', passportLib.isLogged, (req, res) => {
         Mongoose.User.findById(req.session.userId)
             .then(user=>{
                 user.photo_url = req.body.avatar;
+                user.first_name = req.body.nick;
                 user.save();
                 res.send(user)
             })

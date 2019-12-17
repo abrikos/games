@@ -25,6 +25,7 @@ const modelSchema = new Schema({
 
 modelSchema.methods.addBalance = function (add) {
     this[this.realMode ? 'balanceReal' : 'balanceVirtual'] += add;
+    this.save();
 };
 
 modelSchema.virtual('name')

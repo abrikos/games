@@ -4,7 +4,7 @@ import "./Poker.sass";
 import {Button} from "reactstrap";
 import {t} from "client/components/Translator"
 import Loader from "client/components/Loader";
-import StakeManage from "client/views/table/StakeManage";
+import StakeManage from "client/views/poker/StakeManage";
 import PokerMakeBet from "client/views/poker/MakeBet";
 
 export default function PokerSites(props) {

@@ -22,7 +22,7 @@ export default function Layout(props) {
 
     const menuItems = [
         {label: t('Home'), path: '/'},
-        {label: t('Poker'), path: '/Poker'},
+        {label: t('Poker'), path: '/poker'},
         {label: t('Filler'), path: '/filler'},
         {label: t('BlackJack'), path: '/black-jack'},
         {label: `${props.authenticatedUser && props.authenticatedUser.first_name} (${balance.amount})`, path: '/cabinet', hidden: !props.authenticatedUser},
@@ -60,6 +60,7 @@ export default function Layout(props) {
 
 
     let routeResult = useRoutes(routes(props));
+    console.log(routeResult)
     const prevRoute = usePrevious(routeResult);
     if (routeResult && prevRoute && prevRoute.type !== routeResult.type) {
         props.clearAlert()

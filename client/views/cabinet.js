@@ -8,7 +8,8 @@ import UserAvatar from "client/components/UserAvatar";
 export default function Cabinet(props) {
     if (!props.authenticatedUser) return <AccessDenied/>;
     const [user, setUser] = useState({});
-    const [avatar, setAvatar] = useState(props.authenticatedUser.photo_url);
+    const [avatar, setAvatar] = useState();
+    const [nick, setNick] = useState();
 
     useEffect(()=>{
         loadUser()
@@ -19,10 +20,11 @@ export default function Cabinet(props) {
             .then(setUser)
     }
 
-    function avatarSave() {
-        props.api('/cabinet/avatar/save',{avatar})
+    function userSave() {
+        props.api('/cabinet/user/save',{avatar, nick})
             .then(setUser)
     }
+
 
     return <div>
         <MyBreadCrumb items={[
@@ -33,12 +35,16 @@ export default function Cabinet(props) {
         <div className="text-center"><UserAvatar user={user}/></div>
 
         <div className="input-group mb-3">
-            <input type="text" className="form-control" placeholder="Avatar URL" aria-label="Имя получателя" aria-describedby="basic-addon2" defaultValue={user.photo_url} onChange={e=>setAvatar(e.target.value)}/>
-                <div className="input-group-append">
-                    <Button onClick={avatarSave} className="input-group-text" id="basic-addon2">{t('Change avatar')}</Button>
-                </div>
+            <Input placeholder="Avatar URL" defaultValue={user.photo_url} onChange={e=>setAvatar(e.target.value)}/>
         </div>
-        {avatar!==props.authenticatedUser.photo_url && <img src={avatar} alt="new image" style={{maxWidth:150, maxHeight:150}}/>}
+
+        <div className="input-group mb-3">
+            <Input placeholder="Nickname" defaultValue={user.first_name} onChange={e=>setNick(e.target.value)}/>
+        </div>
+        <Button onClick={userSave} className="input-group-text" id="basic-addon3">{t('Save')}</Button>
+
+        {avatar && <img src={avatar} alt="new image" style={{maxWidth:150, maxHeight:150}}/>}
+        {nick}
     </div>
 
 }

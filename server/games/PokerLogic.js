@@ -45,11 +45,12 @@ export default {
         player.addBalance(-stake);
         await player.save();
         if (this.sitesActive.length === 2) {
-            await this._blindsBet()
+            await this._startGame();
+            this.logicNextTurn(this.sitesActive[0]);
         }
     },
 
-    async _blindsBet() {
+    async _startGame() {
         logger.info('START POKER')
         //if (this.currentPot) return logger.warn('Current pot exists');
         if (this.sitesActive.length < 2) return logger.warn('Active sites < 2');
@@ -94,19 +95,32 @@ export default {
 
 
     async logicPlayerBet(value, player) {
-        logger.info("BET", value)
+        logger.info("BET", value);
         const site = this.siteOfPlayer(player);
-        const lastBet = this.betOfPlayer(player);
-        if (lastBet && this.maxBet.value > lastBet.value + value) return false;
-        site.stake -= value;
-        site.turn = false;
-        await Mongoose.Bet.create({site, round: this.round, value});
-        await site.save();
-        this.siteNextTurn.turn = true;
-        await this.siteNextTurn.save();
+        if (value >= 0) {
+            const lastBet = this.betOfPlayer(player);
+            if (lastBet && this.maxBet.value > lastBet.value + value) return false;
+            site.stake -= value;
+            await site.save();
+            await Mongoose.Bet.create({site, round: this.round, value});
+            if(!this.pot.sites.find(s=>s.equals(site._id))){
+                this.pot.sites.push(site);
+                await this.pot.save();
+            }
+        } else {
+            //FOLD
+            this.pot.sites = this.pot.sites.filter(s=>!s.equals(site._id));
+            await this.pot.save();
+        }
+
         return true;
     },
 
+    logicNextTurn(site) {
+        this.round.turn = site;
+        logger.info(site)
+        this.round.save();
+    },
 
     _logicGetDefaultStake() {
         return this.options.blind * 100;

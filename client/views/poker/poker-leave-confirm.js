@@ -1,14 +1,13 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {t} from "client/components/Translator"
 import {Button} from "reactstrap";
 import {A, navigate} from "hookrouter";
-import Loader from "client/components/Loader";
 import MyBreadCrumb from "client/components/MyBreadCrumb";
 
-export default function TableLeaveConfirm(props) {
+export default function PokerLeaveConfirm(props) {
 
     function leaveGame() {
-        props.api(`/table/${props.id}/leave`)
+        props.api(`/poker/${props.id}/leave`)
             .then(res => {
                 navigate('/' + props.game);
             })
@@ -19,7 +18,7 @@ export default function TableLeaveConfirm(props) {
         <h1>{t('Confirm to leave game')}</h1>
 
         <Button onClick={leaveGame} color={'warning'}>{t('Leave table')}</Button>
-        <A href={`/table/${props.id}`}>{t('Go back')}</A>
+        <A href={`/poker/${props.id}`}>{t('Go back')}</A>
     </div>;
 }
 

@@ -7,7 +7,6 @@ const fs = require('fs');
 const session = require('express-session');
 const express = require('express');
 const http = require('http');
-const uuid = require('uuid');
 const passport = require('passport');
 const MongoStore = require('connect-mongo')(session);
 const WebSocket = require('ws');

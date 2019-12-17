@@ -7,14 +7,14 @@ import GameNotLogged from "client/components/GameNotLogged";
 import MyBreadCrumb from "client/components/MyBreadCrumb";
 import InputSelect from "client/components/InputSelect";
 
-export default function TableStart(props) {
+export default function PokerList(props) {
     const [tables, setTables] = useState([]);
     const [options, setOptions] = useState([]);
     const [message, setMessage] = useState({});
 
     useEffect((x) => {
-        console.log('ZZZZZZZZZZZZZZZZZ',props.message)
-        if(props.message && !['join','leave','create'].includes(props.message.action)) return;
+        if (props.message && !['join', 'leave', 'create'].includes(props.message.action) || props.message.game !== 'poker') return;
+        if (props.message.action === 'create' && props.message.player === props.authenticatedUser._id) navigate('/poker/' + props.message.id);
         reloadTables();
         setMessage(props.message);
         setInterval(() => setMessage({}), 2000)
@@ -25,21 +25,21 @@ export default function TableStart(props) {
 
     useEffect(() => {
         reloadTables();
-        props.api(`/table/${props.game}/options`)
+        props.api(`/poker/options`)
             .then(setOptions)
     }, [])
 
     function reloadTables() {
         console.log('RELOAD tables')
-        props.api('/table/list/active/' + props.game)
+        props.api('/poker/list/active/')
             .then(setTables)
     }
 
     function startGame(e) {
         e.preventDefault();
-        props.api('/table/create/' + props.game, props.formToObject(e.target))
+        props.api('/poker/create/', props.formToObject(e.target))
             .then(res => {
-                navigate('/table/' + res.id)
+                //navigate('/poker/' + res.id)
             })
     }
 
@@ -74,7 +74,7 @@ export default function TableStart(props) {
                 <td><small>{g.updated}</small></td>
                 <td className="text-center">{g.sitesActive.length} ({g.sites.length})</td>
                 <td className="text-center">{g.options.defaultBet}</td>
-                <td><A href={`/table/${g.id}`} className="btn btn-primary">{t('View')}</A></td>
+                <td><A href={`/poker/${g.id}`} className="btn btn-primary">{t('View')}</A></td>
             </tr>)}
             </tbody>
         </table>

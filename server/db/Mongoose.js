@@ -2,12 +2,14 @@ import User from "server/db/models/Model-User";
 import Referral from "server/db/models/Model-Referral";
 import Message from "server/db/models/Model-Message";
 import Filler from "server/db/models/Model-Filler";
-import Table from "server/db/models/Model-Table";
 import Log from "server/db/models/Model-Log";
+import Poker from "server/db/models/Model-Poker";
+/*
 import Site from "server/db/models/Model-Site";
 import Pot from "server/db/models/Model-Pot";
 import Round from "server/db/models/Model-Round";
 import Bet from "server/db/models/Model-Bet";
+*/
 
 const mongoose = require("mongoose");
 // подключение
@@ -27,7 +29,8 @@ const Mongoose = {
         if (!cookie.length) return false;
         return cookie.indexOf(model.cookieId) !== -1;
     },
-    User, Referral, Message, Filler, Table, Log, Site, Pot, Round, Bet
+    User, Referral, Message, Filler, Log, Poker
+    //Table, Site, Pot, Round, Bet
 
 };
 export default Mongoose;

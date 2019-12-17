@@ -8,23 +8,25 @@ import Loader from "client/components/Loader";
 //import ToggleButton from 'react-toggle-button'
 
 export default function StakeManage(props) {
-    const [site, setSite] = useState( null);
+    //const [site, setSite] = useState( null);
     const [withdraw, setWithdraw] = useState(false)
+/*
     useEffect(() => {
-        props.api(`/table/${props.table.id}/site/player`)
+        props.api(`/poker/${props.table.id}/site/player`)
             .then(setSite)
 
     }, [props.message])
+*/
 
     function addStake(e) {
         e.preventDefault();
         const form = props.formToObject(e.target);
-        props.api(`/table/${props.table.id}/stake/change`, form)
-            .then(res=>{
+        props.api(`/poker/${props.table.id}/stake/change`, form)
+            /*.then(res=>{
                 setSite(res.site);
-            })
+            })*/
     }
-
+    const site = props.table.playerSite;
     if(!site) return <Loader/>
     return <div className="bet-interface">
         <div>{t('Balance')}: {site.player.balance}</div>

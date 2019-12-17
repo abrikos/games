@@ -56,11 +56,11 @@ passport.use('telegram', new TelegramStrategy(function (req, done) {
                         });
                     //return done({status: 403}, false, {error: 'db', message: 'NO USER'});
                 }else{
-                    const {id, ...rest} = data;
+                    /*const {id, ...rest} = data;
                     for(const field of Object.keys(rest)){
                         user[field] = rest[field];
                     }
-                    user.save();
+                    user.save();*/
                     done(null, user);
                 }
 

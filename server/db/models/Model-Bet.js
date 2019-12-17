@@ -7,12 +7,14 @@ const modelSchema = new Schema({
     site: {type: mongoose.Schema.Types.ObjectId, ref:'Site', required: true},
     round: {type: mongoose.Schema.Types.ObjectId, ref:'Round',required: true},
     value: {type: Number, default: 0},
+    fold: {type: Boolean, default: false},
     data: Object
 }, {
     timestamps: {createdAt: 'createdAt'},
     toObject: {virtuals: true},
     toJSON: {virtuals: true}
 });
+
 
 export default mongoose.model("Bet", modelSchema)
 

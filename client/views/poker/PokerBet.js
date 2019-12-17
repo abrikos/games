@@ -1,9 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {t} from "client/components/Translator"
-import {Button, Input} from "reactstrap";
-import BootstrapSwitchButton from 'bootstrap-switch-button-react'
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faMinus, faPlus} from "@fortawesome/free-solid-svg-icons";
+import {Button} from "reactstrap";
 //import ToggleButton from 'react-toggle-button'
 
 export default function PokerBet(props) {
@@ -23,7 +20,7 @@ export default function PokerBet(props) {
     }
 
     function fold() {
-        props.api(`/table/${props.table.id}/fold`)
+        props.api(`/poker/${props.table.id}/fold`)
     }
 
     function call() {
@@ -35,7 +32,7 @@ export default function PokerBet(props) {
     }
 
     function bet(bet) {
-        props.api(`/table/${props.table.id}/bet`,{bet})
+        props.api(`/poker/${props.table.id}/bet`,{bet})
     }
 
     return <div className="bet-interface">
