@@ -1,5 +1,4 @@
 import moment from "moment";
-import * as Games from "server/games";
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
@@ -11,8 +10,8 @@ const WAIT_PLAYER = 45;
 
 const betSchema = new Schema({
     value: {type: Number, default: 0},
-    fold: {type: Boolean, default: false},
     data: Object,
+    site: mongoose.Schema.Types.ObjectId
 }, {
     timestamps: {createdAt: 'createdAt'},
     toObject: {virtuals: true},
@@ -24,7 +23,6 @@ const siteSchema = new Schema({
     stake: {type: Number, default: 0},
     data: Object,
     position: {type: Number, default: 0},
-    bets: [betSchema]
 }, {
     toObject: {virtuals: true},
     toJSON: {virtuals: true}
@@ -33,7 +31,7 @@ const siteSchema = new Schema({
 
 const roundSchema = new Schema({
     bets: [betSchema],
-    turn: {type: mongoose.Schema.Types.ObjectId},
+    turn: mongoose.Schema.Types.ObjectId,
     data: Object,
     closed: Boolean
 }, {
@@ -43,7 +41,7 @@ const roundSchema = new Schema({
 });
 
 const potSchema = new Schema({
-    sites: [siteSchema],
+    sites: [mongoose.Schema.Types.ObjectId],
     rounds: [roundSchema],
     data: Object,
     closed: Boolean
@@ -87,10 +85,13 @@ modelSchema.methods.siteOfPlayer = function (player) {
 };
 
 modelSchema.methods.betOfPlayer = function (player) {
-    if (!this.bets) return null;
-    const site = this.siteOfPlayer(player);
-    return this.bets.find(b => b.site.equals(site._id));
+    return this.betsOfPlayer(player);
+};
 
+modelSchema.methods.betsOfPlayer = function (player) {
+    if (!this.round || !this.round.bets) return [];
+    const site = this.siteOfPlayer(player);
+    return this.round.bets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter(b => b.site.equals(site._id))
 };
 
 modelSchema.methods.comparePlayers = function (p1, p2) {
@@ -126,33 +127,31 @@ modelSchema.virtual('waitPlayer')
     });
 
 
-modelSchema.virtual('siteNextTurn')
+modelSchema.virtual('sitesOfPot')
     .get(function () {
-        if (!this.siteTurn || this.siteTurn.position + 1 >= this.sitesActive.length) return this.sitesActive[0];
-        return this.sitesActive[this.siteTurn.position + 1];
-
+        if (!this.pot) return [];
+        return this.pot.sites;
     });
 
-modelSchema.virtual('siteTurn')
+modelSchema.virtual('mySumBets')
     .get(function () {
-        return this.round.turn;
-    });
+        if (!this.playerSite) return 0;
+        const bets = this.betsOfPlayer(this.playerSite.player).map(item => item.value);
+        if(!bets.length) return 0;
+        return bets.reduce((a, b) => a + b);
 
-
-modelSchema.virtual('playerBet')
-    .get(function () {
-        if (!this.playerSite) return null;
-        return this.betOfPlayer(this.playerSite.player);
     });
 
 modelSchema.virtual('maxBet')
     .get(function () {
         if (!this.bets) return 0;
-        let max = {value: 0};
+        const bets = {};
         for (const bet of this.bets) {
-            if (bet.value > max.value) max = bet;
+            if(!bets[bet.site]) bets[bet.site] = 0;
+            bets[bet.site] += bet.value
+            logger.info(bet)
         }
-        return max;
+        return Math.max(...Object.values(bets));
     });
 
 modelSchema.virtual('bets')
@@ -160,10 +159,20 @@ modelSchema.virtual('bets')
         return this.round.bets;
     });
 
+modelSchema.virtual('turnSite')
+    .get(function () {
+        return this.sites.find(s => s.equals(this.round.turn));
+    });
+
+modelSchema.virtual('isMyTurn')
+    .get(function () {
+        return this.playerSite && this.playerSite.equals(this.round.turn)  && this.mySumBets;
+    });
+
 
 modelSchema.virtual('potSum')
     .get(function () {
-        if(!this.round || !this.round.bets) return [];
+        if (!this.round || !this.round.bets) return [];
         let sum = 0;
         for (const bet of this.round.bets) {
             sum += bet.value;
@@ -179,8 +188,8 @@ modelSchema.virtual('pot')
 
 modelSchema.virtual('round')
     .get(function () {
-        if(!this.pot) return [];
-        return this.pot.rounds.find(r=>!r.closed)
+        if (!this.pot) return [];
+        return this.pot.rounds.find(r => !r.closed)
     });
 
 modelSchema.virtual('rounds')

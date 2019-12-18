@@ -14,23 +14,29 @@ module.exports.controller = function (app) {
 
 
     app.post('/api/poker/:id/leave', passportLib.isLogged, (req, res) => {
-        Poker.emit('leave', {id: req.params.id, userId: req.session.userId});
+        Poker.leave({id: req.params.id, userId: req.session.userId});
         res.sendStatus(200);
     });
 
     app.post('/api/poker/:id/bet', passportLib.isLogged, (req, res) => {
-        Poker.emit('bet', {id: req.params.id, userId: req.session.userId, value: req.body.bet});
+        Poker.bet({id: req.params.id, userId: req.session.userId, value: req.body.bet});
+        res.sendStatus(200)
+    });
+
+    app.post('/api/poker/:id/fold', passportLib.isLogged, (req, res) => {
+        Poker.fold({id: req.params.id, userId: req.session.userId});
         res.sendStatus(200)
     });
 
 
     app.post('/api/poker/:id/join/site/:site', passportLib.isLogged, (req, res) => {
-        Poker.emit('join', {id: req.params.id, userId: req.session.userId, siteId: req.params.site})
+        Poker.join( {id: req.params.id, userId: req.session.userId, siteId: req.params.site});
+        res.sendStatus(200)
     });
 
 
     app.post('/api/poker/create', passportLib.isLogged, async (req, res) => {
-        Poker.emit('create', {postBody: req.body, userId: req.session.userId});
+        Poker.create( {postBody: req.body, userId: req.session.userId});
         res.sendStatus(200)
     });
 
@@ -49,25 +55,13 @@ module.exports.controller = function (app) {
             })
     });
 
-/*
-    app.post('/api/poker/:id/site/player', passportLib.isLogged, (req, res) => {
-        Mongoose.Poker.findById(req.params.id)
-            .populate(Mongoose.Poker.population)
-            .then(poker => {
-                res.send(poker.siteOfPlayer(req.session.userId));
-            })
-            .catch(e => res.send({error: 500, message: e.message}))
-    });
-*/
-
     app.post('/api/poker/:id/stake/change', passportLib.isLogged, (req, res) => {
-        Poker.emit('stakeChange', {id: req.params.id, userId: req.session.userId, ...req.body});
+        Poker.stakeChange( {id: req.params.id, userId: req.session.userId, ...req.body});
         res.sendStatus(200)
     });
 
 
     app.post('/api/poker/:id', passportLib.isLogged, async (req, res) => {
-
         Poker.getRecord(req.params.id)
             .then(poker => {
                 //poker.logicHideOtherPlayers(req.session.userid);
@@ -77,9 +71,4 @@ module.exports.controller = function (app) {
         //.catch(e => res.send({error: 500, message: e.message}))
     });
 
-    function websocketSend(action, poker, player) {
-        app.locals.wss.clients.forEach(function each(client) {
-            client.send(JSON.stringify({action, id: poker.id, game: poker.game, timestamp: new Date(), player: player}));
-        });
-    }
 };

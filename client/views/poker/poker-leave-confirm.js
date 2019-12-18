@@ -9,7 +9,7 @@ export default function PokerLeaveConfirm(props) {
     function leaveGame() {
         props.api(`/poker/${props.id}/leave`)
             .then(res => {
-                navigate('/' + props.game);
+                navigate('/poker');
             })
     }
 

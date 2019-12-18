@@ -60,10 +60,10 @@ export default function Layout(props) {
 
 
     let routeResult = useRoutes(routes(props));
-    console.log(routeResult)
     const prevRoute = usePrevious(routeResult);
     if (routeResult && prevRoute && prevRoute.type !== routeResult.type) {
-        props.clearAlert()
+        props.clearAlert();
+        props.clearMessage();
     } else {
         //routeResult = <NotFound/>
     }

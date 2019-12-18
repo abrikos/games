@@ -66,9 +66,9 @@ export default function App() {
             setAlert({isOpen: true, children: response.message, color})
         },
 
-        clearAlert: () => {
-            setAlert({isOpen: false})
-        },
+        clearMessage: () => setMessage({}),
+
+        clearAlert: () => setAlert({isOpen: false}),
 
         async api(path, data) {
             //setIsLoading(true);

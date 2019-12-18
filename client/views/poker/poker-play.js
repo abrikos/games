@@ -65,12 +65,12 @@ export default function PokerPlay(props) {
                     <div>
                         {table.playerSite && <div>
                             <CardImages {...table.playerSite}/>
-                            {table.playerBet && <div className="current-bet">Bet: {table.playerBet.value}</div>}
+                            {!!table.mySumBets && <div className="current-bet">Bet: {table.mySumBets}</div>}
                         </div>}
 
                     </div>
 
-                    {table.playerSite.id === table.round.turn && table.playerBet && <PokerBet table={table} {...props}/>}
+                    {table.isMyTurn && <PokerBet table={table} {...props}/>}
                 </div>
                 <div className="col-4">
                     <StakeManage table={table} {...props}/>

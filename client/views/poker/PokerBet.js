@@ -5,8 +5,8 @@ import {Button} from "reactstrap";
 
 export default function PokerBet(props) {
     //const [site, setSite] = useState(props.table.playerSite);
-    const maxBetValue = props.table.maxBet.value;
-    const currentBetValue = props.table.playerBet.value;
+    const maxBetValue = props.table.maxBet;
+    const currentBetValue = props.table.mySumBets;
     const [riseValue, setRiseValue] = useState(maxBetValue - currentBetValue + 1);
 
     function showValue(e){
@@ -41,7 +41,7 @@ export default function PokerBet(props) {
         <Button color="warning" onClick={fold}>{t('Fold')}</Button>
         <hr/>
         <div>
-            <input type="range" className="custom-range" min={maxBetValue - currentBetValue + 1} max={props.table.playerSite.stake} name={props.name} onChange={showValue} defaultValue={props.table.options.blind * 2} onMouseUp={rise}/>
+            <input type="range" className="custom-range" min={maxBetValue - currentBetValue + 1} max={props.table.playerSite.stake} name={props.name} onChange={showValue} defaultValue={props.table.options.blind * 2}/>
             <Button color="danger" onClick={rise}>{t('Rise')} {riseValue}</Button>
         </div>
     </div>;
