@@ -21,7 +21,7 @@ const betSchema = new Schema({
 const siteSchema = new Schema({
     player: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     stake: {type: Number, default: 0},
-    data: Object,
+    cards: [String],
     position: {type: Number, default: 0},
 }, {
     toObject: {virtuals: true},
@@ -30,9 +30,9 @@ const siteSchema = new Schema({
 
 
 const roundSchema = new Schema({
-    bets: [betSchema],
     turn: mongoose.Schema.Types.ObjectId,
-    data: Object,
+    type: String,
+    cards: [String],
     closed: Boolean
 }, {
     timestamps: {createdAt: 'createdAt'},
@@ -43,7 +43,8 @@ const roundSchema = new Schema({
 const potSchema = new Schema({
     sites: [mongoose.Schema.Types.ObjectId],
     rounds: [roundSchema],
-    data: Object,
+    bets: [betSchema],
+    deck: [String],
     closed: Boolean
 }, {
     timestamps: {createdAt: 'createdAt'},
@@ -89,9 +90,9 @@ modelSchema.methods.betOfPlayer = function (player) {
 };
 
 modelSchema.methods.betsOfPlayer = function (player) {
-    if (!this.round || !this.round.bets) return [];
+    if (!this.pot || !this.pot.bets) return [];
     const site = this.siteOfPlayer(player);
-    return this.round.bets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter(b => b.site.equals(site._id))
+    return this.pot.bets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter(b => b.site.equals(site._id))
 };
 
 modelSchema.methods.comparePlayers = function (p1, p2) {
@@ -142,26 +143,32 @@ modelSchema.virtual('mySumBets')
 
     });
 
-modelSchema.virtual('maxBet')
+modelSchema.virtual('sitesBets')
     .get(function () {
-        if (!this.bets) return 0;
+        if (!this.bets) return [];
         const bets = {};
         for (const bet of this.bets) {
             if(!bets[bet.site]) bets[bet.site] = 0;
             bets[bet.site] += bet.value
-            logger.info(bet)
         }
-        return Math.max(...Object.values(bets));
+        return Object.keys(bets).map(site=>{return {site, sum:bets[site]}})
+    });
+
+modelSchema.virtual('maxBet')
+    .get(function () {
+        if (!this.bets) return 0;
+        return Math.max(...this.sitesBets.map(s=>s.sum));
     });
 
 modelSchema.virtual('bets')
     .get(function () {
-        return this.round.bets;
+        if(!this.pot) return [];
+        return this.pot.bets;
     });
 
 modelSchema.virtual('turnSite')
     .get(function () {
-        return this.sites.find(s => s.equals(this.round.turn));
+        return this.sites.id(this.round.turn);
     });
 
 modelSchema.virtual('isMyTurn')
@@ -172,9 +179,9 @@ modelSchema.virtual('isMyTurn')
 
 modelSchema.virtual('potSum')
     .get(function () {
-        if (!this.round || !this.round.bets) return [];
+        if (!this.pot || !this.pot.bets) return [];
         let sum = 0;
-        for (const bet of this.round.bets) {
+        for (const bet of this.pot.bets) {
             sum += bet.value;
         }
         return sum;
@@ -189,7 +196,7 @@ modelSchema.virtual('pot')
 modelSchema.virtual('round')
     .get(function () {
         if (!this.pot) return [];
-        return this.pot.rounds.find(r => !r.closed)
+        return this.pot.rounds[this.pot.rounds.length - 1]
     });
 
 modelSchema.virtual('rounds')

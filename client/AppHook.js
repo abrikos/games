@@ -48,6 +48,7 @@ export default function App() {
 
 
     const params = {
+        TEST_MODE: true,
         cookies: cookieParser.parse(document.cookie),
         message,
         errorPage,

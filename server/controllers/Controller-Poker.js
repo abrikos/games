@@ -5,8 +5,18 @@ const passportLib = require('server/lib/passport');
 const logger = require('logat');
 
 
-module.exports.controller = function (app) {
+module.exports.controller = async function (app) {
     const Poker = new pokerLogic(app);
+    if (0) {
+        await Mongoose.Poker.deleteMany().exec(console.log);
+        const u1 = "5dde5e2f422b1d49bb8d53cc";
+        const u2 = "5dde42f608810e33ea74b73c";
+        let record = await Poker.create({}, u1);
+        record = await Poker.join(record.id, u2);
+        record = await Poker.bet(record.id, u1, 5);
+        console.log(record.round);
+    }
+
 
     app.post('/api/poker/options', passportLib.isLogged, (req, res) => {
         res.send(Poker.options)
@@ -14,29 +24,29 @@ module.exports.controller = function (app) {
 
 
     app.post('/api/poker/:id/leave', passportLib.isLogged, (req, res) => {
-        Poker.leave({id: req.params.id, userId: req.session.userId});
+        Poker.leave(req.params.id, req.session.userId);
         res.sendStatus(200);
     });
 
     app.post('/api/poker/:id/bet', passportLib.isLogged, (req, res) => {
-        Poker.bet({id: req.params.id, userId: req.session.userId, value: req.body.bet});
+        Poker.bet(req.params.id, req.session.userId, req.body.bet);
         res.sendStatus(200)
     });
 
     app.post('/api/poker/:id/fold', passportLib.isLogged, (req, res) => {
-        Poker.fold({id: req.params.id, userId: req.session.userId});
+        Poker.fold(req.params.id, req.session.userId);
         res.sendStatus(200)
     });
 
 
     app.post('/api/poker/:id/join/site/:site', passportLib.isLogged, (req, res) => {
-        Poker.join( {id: req.params.id, userId: req.session.userId, siteId: req.params.site});
+        Poker.join(req.params.id, req.session.userId, req.params.site);
         res.sendStatus(200)
     });
 
 
-    app.post('/api/poker/create', passportLib.isLogged, async (req, res) => {
-        Poker.create( {postBody: req.body, userId: req.session.userId});
+    app.post('/api/poker/create', passportLib.isLogged, (req, res) => {
+        Poker.create(req.body, req.session.userId);
         res.sendStatus(200)
     });
 
@@ -56,7 +66,7 @@ module.exports.controller = function (app) {
     });
 
     app.post('/api/poker/:id/stake/change', passportLib.isLogged, (req, res) => {
-        Poker.stakeChange( {id: req.params.id, userId: req.session.userId, ...req.body});
+        Poker.stakeChange(req.params.id, req.session.userId, req.body);
         res.sendStatus(200)
     });
 

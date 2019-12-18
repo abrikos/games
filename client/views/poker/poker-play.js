@@ -40,10 +40,8 @@ export default function PokerPlay(props) {
     }
 
     function CardImages(site) {
-        return site.data ? <span>
-            <img className="poker-card" src={Cards[site.data.c1 || 'cover']} alt="Cover"/>
-                        <img className="poker-card" src={Cards[site.data.c2 || 'cover']} alt="Cover"/>
-        </span> : <span/>
+        const src = c=> props.TEST_MODE || site.player._id === props.authenticatedUser._id ? c : 'cover';
+        return site.cards.map(c=><img key={c} className="poker-card" src={Cards[src(c)]} alt="card"/>)
     }
 
     if (!table) return <Loader/>;
@@ -56,7 +54,7 @@ export default function PokerPlay(props) {
 
             {mySite && <div className="row">
                 <div className="col-4">
-
+                    {JSON.stringify(table.round.cards)}
                 </div>
                 <div className="col-4 bet-control">
                     Default bet {table.options.defaultBet}

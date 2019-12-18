@@ -16,7 +16,7 @@ const modelSchema = new Schema({
 
 modelSchema.virtual('bets')
     .get(function () {
-        return this.round.bets;
+        return this.pot.bets;
     });
 
 modelSchema.virtual('sum')
