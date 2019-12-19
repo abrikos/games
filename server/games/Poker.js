@@ -113,7 +113,6 @@ export default class Poker {
     }
 
 
-
     _startPot(record) {
         console.log('POT to START');
         const round = {turn: record.sitesActive[0]._id, type: this._roundTypes[0].name};
@@ -130,20 +129,26 @@ export default class Poker {
             const c2 = record.pot.deck.pop();
             site.cards = [c1, c2]
         }
+        const site0 = record.sites.id(record.pot.sites[0]);
+        const site1 = record.sites.id(record.pot.sites[1]);
 
-        this._bet(record, record.sitesActive[0].player, record.options.blind);
-        this._bet(record, record.sitesActive[1].player, record.options.blind * 2);
+        site0.blind = 1;
+        site1.blind = 2;
+        this._bet(record, site0.player, record.options.blind);
+        this._bet(record, site1.player, record.options.blind * 2);
     }
 
     _bet(record, player, value) {
         //if (record.logicPlayerBet(value, player)) return;
         const site = record.siteOfPlayer(player);
-        const lastBet = record.betOfPlayer(player);
-        if (lastBet && record.maxBet > lastBet.value + value) return logger.warn('Not enough to Call');
+
+        const sumBet = record.playerSumBet(player);
+        logger.info(record.maxBet , sumBet , value);
+        if (record.maxBet > sumBet + value) return logger.warn('Not enough to Call');
         site.stake -= value;
         const bet = {value, site};
         //site.bets.push(bet);
-        record.pot.bets.push(bet);
+        record.round.bets.push(bet);
         let idx = record.sitesOfPot.map(s => s.toString()).indexOf(record.round.turn.toString()) + 1;
         if (idx === record.sitesOfPot.length) idx = 0;
         record.round.turn = record.sitesOfPot[idx];
@@ -151,7 +156,7 @@ export default class Poker {
 
     async bet(id, userId, value) {
         const record = await this.getRecord(id);
-        if (!record.turnSite.player.equals(userId)) return logger.warn('Not you turn')
+        if (!record.turnSite.player.equals(userId)) return logger.warn('---------------Not you turn')
         this._bet(record, userId, value);
         this._checkNextRound(record);
         await record.save();
@@ -170,18 +175,25 @@ export default class Poker {
     }
 
     _checkNextRound(record) {
-        const values = record.sitesBets.map(b => b.sum)
-
+        const values = record.sitesBetSum.map(b => b.sum)
+        const lastBet = record.lastBet;
+        const lastSite = record.sites.id(lastBet.site);
         const min = Math.min(...values);
         const max = Math.max(...values);
-        //TODO big blaind can rise
-        if (min === max) {
-            if (record.round.type === this._roundTypes[this._roundTypes.length - 1].name) {
-                return this._finishPot(record)
-            }
-            const newRoundType = this._roundTypes[record.pot.rounds.length];
+        //logger.info(min , max , lastSite.blind )
+        if (min === max && lastSite.blind === 2) {
+            this._nextRound(record)
+        }
+    }
+
+    _nextRound(record){
+        const newRoundType = this._roundTypes[record.pot.rounds.length];
+        if (record.round.type === this._roundTypes[this._roundTypes.length - 1].name) {
+            this._finishPot(record)
+        }else{
             record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.deck.splice(0, newRoundType.cards)});
         }
+
     }
 
     _finishPot(record) {

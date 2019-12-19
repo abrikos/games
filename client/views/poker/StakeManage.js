@@ -31,12 +31,11 @@ export default function StakeManage(props) {
     return <div className="bet-interface">
         <div>{t('Balance')}: {site.player.balance}</div>
         <div>{t('Stake')}: {site.stake}</div>
-        <form onSubmit={addStake}>
-
-            <Input name={"amount"} autoComplete={"off"} type="number" step="any" defaultValue={props.table.options.blind * 100}/>
+        <form onSubmit={addStake} className="row">
+            <div className="col-8"><Input name={"amount"} autoComplete={"off"} type="number" step="any" defaultValue={props.table.options.blind * 100}/></div>
             <input value={withdraw?-1:1} name="factor" hidden={true} readOnly/>
             {/*<InputSelect options={[{value:1, label: 'Add'},{value:-1, label:'Withdraw'}]} defaultValue={1} type={"radio"} onChange={console.log} name={"factor"}/>*/}
-            <div>
+            <div className="col-2">
                 <BootstrapSwitchButton
                     checked={!withdraw}
                     onlabel={<FontAwesomeIcon icon={faPlus}/>}
@@ -50,7 +49,8 @@ export default function StakeManage(props) {
                 />
                 {withdraw ? t('Withdraw') : t('Add')}
             </div>
-            <Button>{t('Go')}</Button>
+            <div className="col-2"><Button>{t('Go')}</Button></div>
+
         </form>
 
     </div>;

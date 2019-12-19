@@ -8,13 +8,23 @@ const logger = require('logat');
 module.exports.controller = async function (app) {
     const Poker = new pokerLogic(app);
     if (0) {
-        await Mongoose.Poker.deleteMany().exec(console.log);
-        const u1 = "5dde5e2f422b1d49bb8d53cc";
-        const u2 = "5dde42f608810e33ea74b73c";
+        //await Mongoose.Poker.deleteMany().exec(console.log);
+        const u1 = "5dde42f608810e33ea74b73c";
+        const u2 = "5dde5e2f422b1d49bb8d53cc";
+
         let record = await Poker.create({}, u1);
         record = await Poker.join(record.id, u2);
-        record = await Poker.bet(record.id, u1, 5);
+        record = await Poker.bet(record.id, u1, 6);
+        record = await Poker.bet(record.id, u2, 1);
+        console.log(record.sites.id(record.round.turn));
+        /*
         console.log(record.round);
+        record = await Poker.bet(record.id, u2, 1);
+        console.log(record.round);
+        record = await Poker.bet(record.id, u1, 1);
+        console.log(record.round);
+        record = await Poker.bet(record.id, u2, 0);
+        console.log(record.round);*/
     }
 
 

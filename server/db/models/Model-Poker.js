@@ -22,6 +22,7 @@ const siteSchema = new Schema({
     player: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     stake: {type: Number, default: 0},
     cards: [String],
+    blind: Number,
     position: {type: Number, default: 0},
 }, {
     toObject: {virtuals: true},
@@ -30,6 +31,7 @@ const siteSchema = new Schema({
 
 
 const roundSchema = new Schema({
+    bets: [betSchema],
     turn: mongoose.Schema.Types.ObjectId,
     type: String,
     cards: [String],
@@ -43,7 +45,7 @@ const roundSchema = new Schema({
 const potSchema = new Schema({
     sites: [mongoose.Schema.Types.ObjectId],
     rounds: [roundSchema],
-    bets: [betSchema],
+
     deck: [String],
     closed: Boolean
 }, {
@@ -85,14 +87,17 @@ modelSchema.methods.siteOfPlayer = function (player) {
     return this.sites.find(s => this.comparePlayers(s.player, player));
 };
 
-modelSchema.methods.betOfPlayer = function (player) {
-    return this.betsOfPlayer(player);
+modelSchema.methods.playerSumBet = function (player) {
+    const bets = this.betsOfPlayer(player);
+    if(!bets.length) return 0;
+    return bets.map(b => b.value).reduce((a, b) => a + b);
 };
 
 modelSchema.methods.betsOfPlayer = function (player) {
-    if (!this.pot || !this.pot.bets) return [];
+    if (!this.pot || !this.potBets) return [];
     const site = this.siteOfPlayer(player);
-    return this.pot.bets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter(b => b.site.equals(site._id))
+    return this.round.bets.filter(b => b.site.equals(site._id));
+    //return this.potBets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter(b => b.site.equals(site._id))
 };
 
 modelSchema.methods.comparePlayers = function (p1, p2) {
@@ -136,55 +141,76 @@ modelSchema.virtual('sitesOfPot')
 
 modelSchema.virtual('mySumBets')
     .get(function () {
-        if (!this.playerSite) return 0;
-        const bets = this.betsOfPlayer(this.playerSite.player).map(item => item.value);
-        if(!bets.length) return 0;
+        if (!this.playerSite || !this.round || !this.round.bets) return 0;
+        const bets = this.betsOfPlayer(this.playerSite.player).map(item => item.value)
+        if (!bets.length) return 0;
         return bets.reduce((a, b) => a + b);
 
     });
 
-modelSchema.virtual('sitesBets')
+modelSchema.virtual('sitesBetSum')
     .get(function () {
-        if (!this.bets) return [];
+        if (!this.round.bets) return [];
         const bets = {};
-        for (const bet of this.bets) {
-            if(!bets[bet.site]) bets[bet.site] = 0;
+        for (const bet of this.round.bets) {
+            if (!bets[bet.site]) bets[bet.site] = 0;
             bets[bet.site] += bet.value
         }
-        return Object.keys(bets).map(site=>{return {site, sum:bets[site]}})
+        return Object.keys(bets).map(site => {
+            return {site, sum: bets[site]}
+        })
     });
 
 modelSchema.virtual('maxBet')
     .get(function () {
-        if (!this.bets) return 0;
-        return Math.max(...this.sitesBets.map(s=>s.sum));
+        if (!this.round.bets) return 0;
+        let max = 0;
+        for (const site of this.sitesBetSum) {
+            if (site.sum > max) max = site.sum;
+        }
+        return max;
     });
 
-modelSchema.virtual('bets')
-    .get(function () {
-        if(!this.pot) return [];
-        return this.pot.bets;
-    });
 
 modelSchema.virtual('turnSite')
     .get(function () {
         return this.sites.id(this.round.turn);
     });
 
+modelSchema.virtual('ftrCards')
+    .get(function () {
+        let cards = [];
+        for(const round of this.rounds){
+            cards = cards.concat(round.cards)
+        }
+        return cards;
+    });
+
 modelSchema.virtual('isMyTurn')
     .get(function () {
-        return this.playerSite && this.playerSite.equals(this.round.turn)  && this.mySumBets;
+        return this.playerSite && this.playerSite.equals(this.round.turn);
     });
 
 
 modelSchema.virtual('potSum')
     .get(function () {
-        if (!this.pot || !this.pot.bets) return [];
+
+        if (!this.pot || !this.potBets) return [];
         let sum = 0;
-        for (const bet of this.pot.bets) {
+        for (const bet of this.potBets) {
             sum += bet.value;
         }
         return sum;
+    });
+
+modelSchema.virtual('potBets')
+    .get(function () {
+        let bets = [];
+        for (const round of this.rounds) {
+            bets = bets.concat(round.bets)
+        }
+
+        return bets;
     });
 
 
@@ -216,6 +242,12 @@ modelSchema.virtual('rounds')
 modelSchema.virtual('sitesActive')
     .get(function () {
         return this.sites.filter(s => s.player);
+    });
+
+modelSchema.virtual('lastBet')
+    .get(function () {
+        if (!this.round || !this.round.bets) return null;
+        return this.round.bets[this.round.bets.length - 1];
     });
 
 

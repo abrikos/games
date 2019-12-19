@@ -9,7 +9,7 @@ import PokerBet from "client/views/poker/PokerBet";
 import * as Cards from "client/images/cards"
 import {A, navigate} from "hookrouter";
 import MyBreadCrumb from "client/components/MyBreadCrumb";
-
+import pokerChip from "client/images/poker-chip.svg"
 
 export default function PokerPlay(props) {
     const [table, setTable] = useState();
@@ -39,10 +39,15 @@ export default function PokerPlay(props) {
         props.api(`/poker/${table.id}/join/site/${id}`)
     }
 
-    function CardImages(site) {
+    function CardsOnHand(site) {
         const src = c=> props.TEST_MODE || site.player._id === props.authenticatedUser._id ? c : 'cover';
         return site.cards.map(c=><img key={c} className="poker-card" src={Cards[src(c)]} alt="card"/>)
     }
+
+    function CardsOnTable(site) {
+        return table.ftrCards.map(c=><img key={c} className="card-on-table" src={Cards[c]} alt="card"/>)
+    }
+
 
     if (!table) return <Loader/>;
     const sites = table.sites.filter(p => !p.player || p.player && p.player._id !== props.authenticatedUser._id);
@@ -53,24 +58,21 @@ export default function PokerPlay(props) {
         <div className="Poker-table p-4">
 
             {mySite && <div className="row">
-                <div className="col-4">
-                    {JSON.stringify(table.round.cards)}
+                <div className="col-8">
+                    <h2><img src={pokerChip} alt={"poker chip"} className="poker-chip"/> {table.potSum}</h2>
+                    <CardsOnTable />
                 </div>
-                <div className="col-4 bet-control">
-                    Default bet {table.options.defaultBet}
-                    <hr/>
+                <div className="col-4 bet-control text-center">
                     <UserAvatar user={mySite.player} {...props}/>
+                    <h4>{table.playerSite.stake}</h4>
                     <div>
                         {table.playerSite && <div>
-                            <CardImages {...table.playerSite}/>
+                            <CardsOnHand {...table.playerSite}/>
                             {!!table.mySumBets && <div className="current-bet">Bet: {table.mySumBets}</div>}
                         </div>}
 
                     </div>
-
                     {table.isMyTurn && <PokerBet table={table} {...props}/>}
-                </div>
-                <div className="col-4">
                     <StakeManage table={table} {...props}/>
                 </div>
                 {table.playerSite && <A href={`/poker/${table.id}/leave`} className="btn btn-warning text-right">{t('Leave')}</A>}
@@ -83,7 +85,7 @@ export default function PokerPlay(props) {
                         {s.player ? <div>
                             <UserAvatar user={s.player} {...props} size="sm"/>
                             <strong>{s.stake}</strong>
-                            <CardImages {...s}/>
+                            <CardsOnHand {...s}/>
                         </div> : <div>
                             {mySite ? 'Empty' : <Button onClick={() => joinTable(s._id)} color="success">{t('Sit here')}</Button>}
                         </div>}
