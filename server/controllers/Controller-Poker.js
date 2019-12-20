@@ -84,27 +84,27 @@ module.exports.controller = async function (app) {
     });
 
     function testDeck() {
-        const random = 2;
+        const random = 0;
         let deck = [];
         let hands = [];
         let table;
         if (!random) {
             const h = [
-                ['H5', 'D6'],
-                ['CQ', 'S3']
+                ['C2', 'D6'],
+                ['CK', 'S9']
             ];
             for (let i = 0; i < h.length; i++) {
                 hands.push({cards: [Poker._card(h[i][0]), Poker._card(h[i][1])]});
                 deck = deck.concat(h[i])
             }
-            //const t = ['SK', 'H2', 'D9','SJ','H6'];
-            const t = ['H2', 'D7', 'D8', 'DA', 'D3'];
+            const t = ['SK', 'H2', 'D9','CJ','H6'];
+            //const t = ['H2', 'D7', 'D8', 'DA', 'D3'];
             deck = deck.concat(t);
             table = deck.splice(h.length + 2, 5).map(c => Poker._card(c));
         } else {
             deck = Poker._deck;
             for (let i = 0; i < random; i++) {
-                hands.push({cards: [deck.pop(),deck.pop()]});
+                hands.push({_id:i, cards: [deck.pop(),deck.pop()]});
             }
             table = deck.splice(0,5);
         }
@@ -112,7 +112,7 @@ module.exports.controller = async function (app) {
 
 
         for (const c of hands) {
-            c.combination = Poker._combination(c.cards, table)
+            c.result = Poker._combination(c.cards, table)
         }
 
         const winners = Poker._winners(hands, table);

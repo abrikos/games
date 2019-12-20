@@ -1,11 +1,11 @@
 import React, {useState} from 'react';
 import UserAvatar from "client/components/UserAvatar";
-import "./Poker.sass";
+import "client/poker/Poker.sass";
 import {Button} from "reactstrap";
 import {t} from "client/components/Translator"
 import Loader from "client/components/Loader";
-import StakeManage from "client/views/poker/StakeManage";
-import PokerMakeBet from "client/views/poker/MakeBet";
+import StakeManage from "client/poker/StakeManage";
+import PokerMakeBet from "client/poker/MakeBet";
 
 export default function PokerSites(props) {
     const [sites, setSites] = useState(props.table.sites);

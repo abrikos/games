@@ -23,6 +23,7 @@ const siteSchema = new Schema({
     player: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     stake: {type: Number, default: 0},
     cards: [cardSchema],
+    result: Object,
     blind: Number,
     position: {type: Number, default: 0},
 }, {

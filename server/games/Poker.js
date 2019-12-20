@@ -204,11 +204,32 @@ export default class Poker {
 
     }
 
-    _winners(winners, table) {
-        const sorted = winners.sort((b, a) => a.combination.priority - b.combination.priority);
-        const max = sorted[0].priority;
-        const top = winners.filter(c=>c.combination.priority===max);
-        logger.info(top)
+    _winners(sites, table) {
+        const sorted = sites.sort((b, a) => a.result.priority - b.result.priority);
+        const max = sites[0].result.priority;
+        const name = sites[0].result.name;
+        const tops = sites.filter(c => c.result.priority === max);
+        if (tops.length > 1) {
+            switch (name) {
+                case "Two pairs":
+                    const topCards = []
+                    for (const s of tops) {
+                        let max2 = 0;
+                        for(const c of s.result.combination){
+                            //logger.info(c)
+                            if(c.idx>max2) max2 =c.idx;
+                        }
+                        //topCards.push()
+                        logger.info(max2)
+
+                    }
+
+                    break;
+            }
+
+        } else {
+            return tops[0]
+        }
     }
 
     _combination(hand, table) {

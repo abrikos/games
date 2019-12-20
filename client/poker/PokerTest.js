@@ -16,7 +16,7 @@ export default function PokerTest(props) {
     console.log(deck.hands)
     return <div className="row">
         <div className="col">
-        {deck.hands.map((h,i)=><div key={i}><PlayCard {...h.cards[0]}/><PlayCard {...h.cards[1]}/> {h.combination.name} </div>)}
+        {deck.hands.map((h,i)=><div key={i}><PlayCard {...h.cards[0]}/><PlayCard {...h.cards[1]}/> {h.result.name} </div>)}
         </div>
         <div className="col">
             {deck.table.map((c,i)=><PlayCard key={i} {...c}/>)}

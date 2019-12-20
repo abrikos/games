@@ -1,16 +1,17 @@
 import React, {useEffect, useState} from 'react';
 import UserAvatar from "client/components/UserAvatar";
-import "./Poker.sass";
+import "client/poker/Poker.sass";
 import {Button} from "reactstrap";
 import {t} from "client/components/Translator"
 import Loader from "client/components/Loader";
-import StakeManage from "client/views/poker/StakeManage";
-import PokerBet from "client/views/poker/PokerBet";
+import StakeManage from "client/poker/StakeManage";
+import PokerBet from "client/poker/PokerBet";
 import * as Cards from "client/images/cards"
 import {A, navigate} from "hookrouter";
 import MyBreadCrumb from "client/components/MyBreadCrumb";
 import pokerChip from "client/images/poker-chip.svg"
 import PlayCard from "client/components/PlayCard";
+import PokerSvg from "client/poker/poker-svg";
 
 export default function PokerPlay(props) {
     const [table, setTable] = useState();
@@ -54,9 +55,10 @@ export default function PokerPlay(props) {
     if (!table) return <Loader/>;
     const sites = table.sites.filter(p => !p.player || p.player && p.player._id !== props.authenticatedUser._id);
     const mySite = table.sites.find(p => p.player && p.player._id === props.authenticatedUser._id);
-console.log(table.playerSite)
+
     return <div>
         <MyBreadCrumb items={[{href: '/poker', label: t('Poker')}, {label: table.name}]}/>
+
         <div className="Poker-table p-4">
 
             {mySite && <div className="row">

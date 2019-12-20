@@ -2,10 +2,11 @@ import React from "react";
 import Home from "client/views/home/home";
 import Login from "client/views/login";
 import Cabinet from "client/views/cabinet";
-import PokerList from "client/views/poker/poker-list";
-import PokerLeaveConfirm from "client/views/poker/poker-leave-confirm";
-import PokerPlay from "client/views/poker/poker-play";
-import PokerTest from "client/views/poker/PokerTest";
+import PokerList from "client/poker/poker-list";
+import PokerLeaveConfirm from "client/poker/poker-leave-confirm";
+import PokerPlay from "client/poker/poker-play";
+import PokerTest from "client/poker/PokerTest";
+import PokerSvg from "client/poker/poker-svg";
 
 export default function Routes(props){
 
@@ -15,7 +16,8 @@ export default function Routes(props){
         "/login": () => <Login {...props}/>,
         "/poker": () => <PokerList {...props}/>,
         "/poker/test": () => <PokerTest {...props}/>,
-        "/poker/:id": (params) => <PokerPlay {...params} {...props}/>,
+        "/poker/svg": () => <PokerSvg {...props}/>,
+        "/poker/:id": (params) => <PokerSvg {...params} {...props}/>,
         "/poker/:id/leave": (params) => <PokerLeaveConfirm {...params} {...props}/>,
         //"/filler": () => <HomeFiller {...props}/>,
 
