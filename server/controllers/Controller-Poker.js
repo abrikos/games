@@ -3,12 +3,13 @@ import pokerLogic from "server/games/Poker";
 
 const passportLib = require('server/lib/passport');
 const logger = require('logat');
-
+//Mongoose.Poker.deleteMany().exec(console.log);
 
 module.exports.controller = async function (app) {
     const Poker = new pokerLogic(app);
+
     if (0) {
-        //await Mongoose.Poker.deleteMany().exec(console.log);
+
         const u1 = "5dde42f608810e33ea74b73c";
         const u2 = "5dde5e2f422b1d49bb8d53cc";
 
@@ -68,10 +69,12 @@ module.exports.controller = async function (app) {
     app.post('/api/poker/list/active', (req, res) => {
         //Mongoose.User.findById(req.session.userId);
         Mongoose.Poker.find({active: true})
-            .populate(Mongoose.Poker.population)
+            //.populate(Mongoose.Poker.population)
             .sort({updatedAt: -1})
             .then(pokers => {
-                res.send(pokers)
+                res.send(pokers.map(p => {
+                    return {id: p.id, options: p.options, maxPlayers: p.maxPlayers, name: p.name, players: p.sitesActive.map(s => s.player)}
+                }))
             })
     });
 
@@ -80,12 +83,29 @@ module.exports.controller = async function (app) {
         res.sendStatus(200)
     });
 
+    function testDeck(){
+        let deck = ['H5','D6','CQ','H4','SK','H2','D9'];
+        //deck = Poker._deck.map(c=>c.suit+c.value);
+        const hand = [Poker._card(deck[0]), Poker._card(deck[1])];
+        const table = [Poker._card(deck[2]), Poker._card(deck[3]), Poker._card(deck[4]), Poker._card(deck[5]), Poker._card(deck[6])];
+        return {hand,table}
+    }
+    logger.info("COMBINATION",Poker._combination(testDeck()));
+
+    app.post('/api/poker/deck', (req, res) => {
+        const deck = testDeck();
+        deck.result = Poker._combination(deck);
+        logger.info(deck)
+        res.send(deck)
+    });
+
 
     app.post('/api/poker/:id', passportLib.isLogged, async (req, res) => {
         Poker.getRecord(req.params.id)
             .then(poker => {
-                //poker.logicHideOtherPlayers(req.session.userid);
                 poker.playerSite = poker.siteOfPlayer(req.session.userId);
+                if(poker.pot) poker.pot.deck = [];
+                if(0) poker.sites = poker.sites.map(s=>{s.cards=[false,false]; return s});
                 res.send(poker)
             })
         //.catch(e => res.send({error: 500, message: e.message}))

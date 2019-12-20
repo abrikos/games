@@ -5,6 +5,7 @@ import Cabinet from "client/views/cabinet";
 import PokerList from "client/views/poker/poker-list";
 import PokerLeaveConfirm from "client/views/poker/poker-leave-confirm";
 import PokerPlay from "client/views/poker/poker-play";
+import PokerTest from "client/views/poker/PokerTest";
 
 export default function Routes(props){
 
@@ -12,7 +13,8 @@ export default function Routes(props){
         "/": () => <Home {...props}/>,
         "/cabinet": () => <Cabinet {...props}/>,
         "/login": () => <Login {...props}/>,
-        "/poker": () => <PokerList game={'Poker'} {...props}/>,
+        "/poker": () => <PokerList {...props}/>,
+        "/poker/test": () => <PokerTest {...props}/>,
         "/poker/:id": (params) => <PokerPlay {...params} {...props}/>,
         "/poker/:id/leave": (params) => <PokerLeaveConfirm {...params} {...props}/>,
         //"/filler": () => <HomeFiller {...props}/>,

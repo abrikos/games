@@ -7,6 +7,7 @@ const logger = require('logat');
 const MAX_PLAYERS = 3;
 const WAIT_PLAYER = 45;
 
+const cardSchema = new Schema({suit:String, value:String, idx: Number});
 
 const betSchema = new Schema({
     value: {type: Number, default: 0},
@@ -21,7 +22,7 @@ const betSchema = new Schema({
 const siteSchema = new Schema({
     player: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     stake: {type: Number, default: 0},
-    cards: [String],
+    cards: [cardSchema],
     blind: Number,
     position: {type: Number, default: 0},
 }, {
@@ -34,7 +35,7 @@ const roundSchema = new Schema({
     bets: [betSchema],
     turn: mongoose.Schema.Types.ObjectId,
     type: String,
-    cards: [String],
+    cards: [cardSchema],
     closed: Boolean
 }, {
     timestamps: {createdAt: 'createdAt'},
@@ -42,11 +43,13 @@ const roundSchema = new Schema({
     toJSON: {virtuals: true}
 });
 
+
+
 const potSchema = new Schema({
     sites: [mongoose.Schema.Types.ObjectId],
     rounds: [roundSchema],
 
-    deck: [String],
+    deck: [cardSchema],
     closed: Boolean
 }, {
     timestamps: {createdAt: 'createdAt'},

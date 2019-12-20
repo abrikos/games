@@ -48,7 +48,7 @@ export default function PokerList(props) {
     }
 
     function imIn(g) {
-        return g.sites.map(s => s.player).includes(props.authenticatedUser._id);
+        return g.players.includes(props.authenticatedUser._id);
     }
 
     function isTableUpdated(t) {
@@ -62,7 +62,7 @@ export default function PokerList(props) {
                 <th>{t('Name')}</th>
                 <th>{t('Last activity')}</th>
                 <th>{t('Players')}</th>
-                <th>{t('Bet')}</th>
+                <th>{t('Blinds')}</th>
                 <th></th>
             </tr>
             </thead>
@@ -72,8 +72,8 @@ export default function PokerList(props) {
                     <div>{g.name}</div>
                 </Animated> : g.name}</td>
                 <td><small>{g.updated}</small></td>
-                <td className="text-center">{g.sitesActive.length} ({g.sites.length})</td>
-                <td className="text-center">{g.options.defaultBet}</td>
+                <td className="text-center">{g.players.length} ({g.maxPlayers})</td>
+                <td className="text-center">{g.options.blind}/{g.options.blind * 2}</td>
                 <td><A href={`/poker/${g.id}`} className="btn btn-primary">{t('View')}</A></td>
             </tr>)}
             </tbody>
@@ -92,8 +92,8 @@ export default function PokerList(props) {
                 {options.map(option => <Option key={option.name} {...option}/>)}
                 <Button color={'primary'}>{t('Start new game')}</Button>
             </form>
-            <div><strong>{t('I can join')} {table(tables.filter(imNotIn).filter(g => g.canJoin))}</strong></div>
-            <div><strong>{t('I play')} {table(tables.filter(imIn))}</strong></div>
+            <div><strong>{t('I can join')} {table(tables)}</strong></div>
+            {/*<div><strong>{t('I play')} {table(tables.filter(imIn))}</strong></div>*/}
         </div>
     </div>;
 }

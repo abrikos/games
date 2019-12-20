@@ -10,6 +10,7 @@ import * as Cards from "client/images/cards"
 import {A, navigate} from "hookrouter";
 import MyBreadCrumb from "client/components/MyBreadCrumb";
 import pokerChip from "client/images/poker-chip.svg"
+import PlayCard from "client/components/PlayCard";
 
 export default function PokerPlay(props) {
     const [table, setTable] = useState();
@@ -39,20 +40,21 @@ export default function PokerPlay(props) {
         props.api(`/poker/${table.id}/join/site/${id}`)
     }
 
+
     function CardsOnHand(site) {
-        const src = c=> props.TEST_MODE || site.player._id === props.authenticatedUser._id ? c : 'cover';
-        return site.cards.map(c=><img key={c} className="poker-card" src={Cards[src(c)]} alt="card"/>)
+        //const flip = c=> props.TEST_MODE || site.player._id === props.authenticatedUser._id ? c : 'cover';
+        return site.cards.map((c,i)=><PlayCard key={i} {...c}/>)
     }
 
-    function CardsOnTable(site) {
-        return table.ftrCards.map(c=><img key={c} className="card-on-table" src={Cards[c]} alt="card"/>)
+    function CardsOnTable() {
+        return table.ftrCards.map((c,i)=><PlayCard key={i} {...c}/>)
     }
 
 
     if (!table) return <Loader/>;
     const sites = table.sites.filter(p => !p.player || p.player && p.player._id !== props.authenticatedUser._id);
     const mySite = table.sites.find(p => p.player && p.player._id === props.authenticatedUser._id);
-
+console.log(table.playerSite)
     return <div>
         <MyBreadCrumb items={[{href: '/poker', label: t('Poker')}, {label: table.name}]}/>
         <div className="Poker-table p-4">
@@ -67,6 +69,7 @@ export default function PokerPlay(props) {
                     <h4>{table.playerSite.stake}</h4>
                     <div>
                         {table.playerSite && <div>
+
                             <CardsOnHand {...table.playerSite}/>
                             {!!table.mySumBets && <div className="current-bet">Bet: {table.mySumBets}</div>}
                         </div>}

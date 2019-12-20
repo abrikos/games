@@ -1,6 +1,6 @@
 import Mongoose from "server/db/Mongoose";
 import {rword} from "rword";
-//import * as Games from "server/games";
+
 const logger = require('logat');
 
 
@@ -28,15 +28,23 @@ export default class Poker {
     }
 
     get _deck() {
-        const d = [];
-        for (const s of this._cards.suits) {
-            for (const v of this._cards.values) {
-                d.push(s + v)
-            }
-        }
-        return d.sort(function () {
+        return this._deckStraight.sort(function () {
             return 0.5 - Math.random()
         });
+    }
+
+    _card(name) {
+        return this._deckStraight.find(c => c.suit + c.value === name);
+    }
+
+    get _deckStraight() {
+        const d = [];
+        for (const suit of this._cards.suits) {
+            for (let idx = 0; idx < this._cards.values.length; idx++) {
+                d.push({suit, value: this._cards.values[idx], idx})
+            }
+        }
+        return d;
     }
 
 
@@ -143,7 +151,7 @@ export default class Poker {
         const site = record.siteOfPlayer(player);
 
         const sumBet = record.playerSumBet(player);
-        logger.info(record.maxBet , sumBet , value);
+        logger.info(record.maxBet, sumBet, value);
         if (record.maxBet > sumBet + value) return logger.warn('Not enough to Call');
         site.stake -= value;
         const bet = {value, site};
@@ -175,7 +183,7 @@ export default class Poker {
     }
 
     _checkNextRound(record) {
-        const values = record.sitesBetSum.map(b => b.sum)
+        const values = record.sitesBetSum.map(b => b.sum);
         const lastBet = record.lastBet;
         const lastSite = record.sites.id(lastBet.site);
         const min = Math.min(...values);
@@ -186,14 +194,106 @@ export default class Poker {
         }
     }
 
-    _nextRound(record){
+    _nextRound(record) {
         const newRoundType = this._roundTypes[record.pot.rounds.length];
         if (record.round.type === this._roundTypes[this._roundTypes.length - 1].name) {
             this._finishPot(record)
-        }else{
+        } else {
             record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.deck.splice(0, newRoundType.cards)});
         }
 
+    }
+
+    _combination({hand, table}) {
+        const sorted = hand.concat(table).sort((a, b) => b.idx - a.idx);
+        const flush = this._getFlush(sorted);
+        if (flush && flush.straight) return flush;
+        //const care = this._getByValues(4, sorted);        if (care) return care;
+        if (flush) return flush;
+        const straight = this._getStraight(sorted);
+        if (straight) return straight
+        //const set = this._getByValues(3, sorted);        if(set) return set;
+        const double = this._getDouble( sorted);
+        if(double) return double;
+        //const pair = this._getByValues(2, sorted);        if(pair) return pair;
+        const one = this._getHighCard(1, sorted);
+        return one;
+
+    }
+
+    _getHighCard(count, source) {
+        return {combination:source[0], kickers:source.splice(1, 4), name: "High card"}
+    }
+
+    _getDouble(source) {
+        const sorted = Object.assign([], source);
+        let obj = {};
+        for (const s of sorted) {
+            if (!obj[s.value]) obj[s.value] = [];
+            obj[s.value].push(s);
+        }
+
+        const matched = Object.keys(obj).filter(key => obj[key].length === 2);
+        if(matched.length!==2) return;
+        const combination = obj[matched[0]].concat(obj[matched[1]]);
+        const kickers = sorted.filter(c => matched.indexOf(c.value)===-1)
+            .splice(0,1);
+        return combination && {combination, kickers, name: "Two pairs"}
+    }
+
+
+    _getByValues(count, source) {
+        const names = {4:"Care",3:"Set",2:"Pair"};
+        const sorted = Object.assign([], source);
+        let obj = {};
+        for (const s of sorted) {
+            if (!obj[s.value]) obj[s.value] = [];
+            obj[s.value].push(s);
+        }
+        const matched = Object.keys(obj).find(key => obj[key].length === count);
+        const combination = obj[matched];
+        const kickersCount = -7 - count;
+        const kickers = sorted.filter(c => c.value !== matched)
+            .splice(kickersCount - 2, 5 - count);
+        return combination && {combination, kickers, name: names[count]}
+    }
+
+
+    _getFlush(source) {
+        const sorted = Object.assign([], source);
+        const suites = {};
+        let flush;
+        for (const s of sorted) {
+            if (!suites[s.suit]) suites[s.suit] = [];
+            suites[s.suit].push(s);
+            if (suites[s.suit].length === 5) flush = suites[s.suit];
+        }
+        console.log('FLUSH', flush)
+        const straight = flush && this._getStraight(flush);
+        if (straight) flush = straight.combination;
+        return flush && {combination: flush, max: flush[0], min: flush[flush.length - 1], straight: !!straight, name: `${straight ? flush[0].idx === 12 ? 'Flush Royal' : 'Straight flush' : 'Flush'}`}
+    }
+
+
+    _getStraight(source) {
+        const sorted = Object.assign([], source);
+        if (sorted[0].idx === 12) {
+            const ace = Object.assign({}, sorted[0]);
+            ace.idx = -1;
+            sorted.push(ace)
+        }
+        const straight = [];
+        for (let i = 0; i < sorted.length; i++) {
+
+            if (sorted[i + 1]) {
+                if (sorted[i].idx - sorted[i + 1].idx === 1) {
+                    if (!straight.length) straight.push(sorted[i]);
+                    straight.push(sorted[i + 1])
+                }
+            }
+            if (straight.length === 5) break;
+        }
+        return straight.length === 5 && {combination: straight, max: straight[0], min: straight[straight.length - 1], name: 'Stright'}
     }
 
     _finishPot(record) {
@@ -201,13 +301,13 @@ export default class Poker {
     }
 
     async stakeChange(id, userId, postBody) {
-        const record = await this.getRecord(id)
+        const record = await this.getRecord(id);
         const site = record.siteOfPlayer(userId);
         const a = postBody.amount * postBody.factor;
         site.stake += a;
         if (site.stake <= 0) return;
         site.player.addBalance(-a);
-        await record.save()
+        await record.save();
         this._websocketSend('stake/change', record, userId);
         return record;
         //res.send({site, balance: {amount: site.player.balance}})
