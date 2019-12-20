@@ -204,25 +204,35 @@ export default class Poker {
 
     }
 
-    _combination({hand, table}) {
+    _winners(winners, table) {
+        const sorted = winners.sort((b, a) => a.combination.priority - b.combination.priority);
+        const max = sorted[0].priority;
+        const top = winners.filter(c=>c.combination.priority===max);
+        logger.info(top)
+    }
+
+    _combination(hand, table) {
         const sorted = hand.concat(table).sort((a, b) => b.idx - a.idx);
         const flush = this._getFlush(sorted);
         if (flush && flush.straight) return flush;
-        //const care = this._getByValues(4, sorted);        if (care) return care;
+        const care = this._getByValues(4, sorted);
+        if (care) return care;
         if (flush) return flush;
         const straight = this._getStraight(sorted);
-        if (straight) return straight
-        //const set = this._getByValues(3, sorted);        if(set) return set;
-        const double = this._getDouble( sorted);
-        if(double) return double;
-        //const pair = this._getByValues(2, sorted);        if(pair) return pair;
-        const one = this._getHighCard(1, sorted);
+        if (straight) return straight;
+        const set = this._getByValues(3, sorted);
+        if (set) return set;
+        const double = this._getDouble(sorted);
+        if (double) return double;
+        const pair = this._getByValues(2, sorted);
+        if (pair) return pair;
+        const one = this._getHighCard(sorted);
         return one;
 
     }
 
-    _getHighCard(count, source) {
-        return {combination:source[0], kickers:source.splice(1, 4), name: "High card"}
+    _getHighCard(source) {
+        return {combination: source[0], kickers: source.splice(1, 4), name: "High card", priority: 1}
     }
 
     _getDouble(source) {
@@ -234,16 +244,16 @@ export default class Poker {
         }
 
         const matched = Object.keys(obj).filter(key => obj[key].length === 2);
-        if(matched.length!==2) return;
+        if (matched.length !== 2) return;
         const combination = obj[matched[0]].concat(obj[matched[1]]);
-        const kickers = sorted.filter(c => matched.indexOf(c.value)===-1)
-            .splice(0,1);
-        return combination && {combination, kickers, name: "Two pairs"}
+        const kickers = sorted.filter(c => matched.indexOf(c.value) === -1)
+            .splice(0, 1);
+        return combination && {combination, kickers, name: "Two pairs", priority: 2.5}
     }
 
 
     _getByValues(count, source) {
-        const names = {4:"Care",3:"Set",2:"Pair"};
+        const names = {4: "Care", 3: "Set", 2: "Pair"};
         const sorted = Object.assign([], source);
         let obj = {};
         for (const s of sorted) {
@@ -255,7 +265,7 @@ export default class Poker {
         const kickersCount = -7 - count;
         const kickers = sorted.filter(c => c.value !== matched)
             .splice(kickersCount - 2, 5 - count);
-        return combination && {combination, kickers, name: names[count]}
+        return combination && {combination, kickers, name: names[count], priority: count}
     }
 
 
@@ -268,10 +278,18 @@ export default class Poker {
             suites[s.suit].push(s);
             if (suites[s.suit].length === 5) flush = suites[s.suit];
         }
-        console.log('FLUSH', flush)
         const straight = flush && this._getStraight(flush);
-        if (straight) flush = straight.combination;
-        return flush && {combination: flush, max: flush[0], min: flush[flush.length - 1], straight: !!straight, name: `${straight ? flush[0].idx === 12 ? 'Flush Royal' : 'Straight flush' : 'Flush'}`}
+        let name;
+        let priority;
+        if (straight) {
+            flush = straight.combination;
+            name = flush[0].idx === 12 ? 'Flush Royal' : 'Straight flush'
+            priority = 7
+        } else {
+            name = 'Flush';
+            priority = 6;
+        }
+        return flush && {combination: flush, max: flush[0], min: flush[flush.length - 1], straight: !!straight, name, priority}
     }
 
 
@@ -293,7 +311,7 @@ export default class Poker {
             }
             if (straight.length === 5) break;
         }
-        return straight.length === 5 && {combination: straight, max: straight[0], min: straight[straight.length - 1], name: 'Stright'}
+        return straight.length === 5 && {combination: straight, max: straight[0], min: straight[straight.length - 1], name: 'Stright', priority: 5}
     }
 
     _finishPot(record) {
