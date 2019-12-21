@@ -90,32 +90,32 @@ module.exports.controller = async function (app) {
         let table;
         if (!random) {
             const h = [
-                ['C2', 'D6'],
-                ['CK', 'S9']
+                ['H8', 'H8'],
+                ['DK', 'HJ'],
+                ['CK', 'S7']
             ];
             for (let i = 0; i < h.length; i++) {
                 hands.push({cards: [Poker._card(h[i][0]), Poker._card(h[i][1])]});
                 deck = deck.concat(h[i])
             }
-            const t = ['SK', 'H2', 'D9','CJ','H6'];
+            const t = ['SK', 'H2', 'D9', 'C9', 'C2'];
             //const t = ['H2', 'D7', 'D8', 'DA', 'D3'];
             deck = deck.concat(t);
-            table = deck.splice(h.length + 2, 5).map(c => Poker._card(c));
+            table = deck.splice(h.length * 2, 5).map(c => Poker._card(c));
         } else {
             deck = Poker._deck;
             for (let i = 0; i < random; i++) {
-                hands.push({_id:i, cards: [deck.pop(),deck.pop()]});
+                hands.push({_id: i, cards: [deck.pop(), deck.pop()]});
             }
-            table = deck.splice(0,5);
+            table = deck.splice(0, 5);
         }
-
 
 
         for (const c of hands) {
             c.result = Poker._combination(c.cards, table)
         }
 
-        const winners = Poker._winners(hands, table);
+        const winners = Poker._winners(hands);
         return {hands, table, winners}
     }
 

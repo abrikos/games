@@ -204,27 +204,42 @@ export default class Poker {
 
     }
 
-    _winners(sites, table) {
-        const sorted = sites.sort((b, a) => a.result.priority - b.result.priority);
-        const max = sites[0].result.priority;
-        const name = sites[0].result.name;
-        const tops = sites.filter(c => c.result.priority === max);
+    _winners(sites) {
+        const maxPriority = sites.sort((b,a)=>a.result.priority - b.result.priority )[0].result.priority;
+        const tops = sites.filter(c => c.result.priority === maxPriority);
+        let top = this._checkCombinations('combination',tops, 0);
+        if(!top) top =  this._checkCombinations('kickers',tops, 0);
+        console.log(tops.map(t=>this._combinationSum(t.result.combination)));
+
+        if(!top){
+            logger.info('DRAW')
+        }else{
+
+        }
+    }
+
+
+
+    _combinationSum(combination) {
+        return combination.map(c=>c.idx).reduce((a,b)=>a+b)
+    }
+
+    _checkCombinations(type, tops, level) {
+        if(!tops[0].result[type][level]) return;
         if (tops.length > 1) {
-            switch (name) {
-                case "Two pairs":
-                    const topCards = []
-                    for (const s of tops) {
-                        let max2 = 0;
-                        for(const c of s.result.combination){
-                            //logger.info(c)
-                            if(c.idx>max2) max2 =c.idx;
-                        }
-                        //topCards.push()
-                        logger.info(max2)
+            let max2 = 0;
+            for (const s of tops) {
+                //logger.info(level,  max2);
+                //logger.info(level, s.result.combination[level], s.result.combination[level].idx, max2)
+                if (s.result[type][level].idx > max2) max2 = s.result[type][level].idx;
+            }
 
-                    }
-
-                    break;
+            if (!max2) return;
+            const tops2 = tops.filter(s => s.result[type][level].idx === max2);
+            if (tops2.length > 1) {
+                return this._checkCombinations(type, tops2, level + 1)
+            } else {
+                return tops2[0]
             }
 
         } else {
@@ -258,18 +273,15 @@ export default class Poker {
 
     _getDouble(source) {
         const sorted = Object.assign([], source);
-        let obj = {};
-        for (const s of sorted) {
-            if (!obj[s.value]) obj[s.value] = [];
-            obj[s.value].push(s);
-        }
 
-        const matched = Object.keys(obj).filter(key => obj[key].length === 2);
-        if (matched.length !== 2) return;
-        const combination = obj[matched[0]].concat(obj[matched[1]]);
-        const kickers = sorted.filter(c => matched.indexOf(c.value) === -1)
-            .splice(0, 1);
-        return combination && {combination, kickers, name: "Two pairs", priority: 2.5}
+        const combination = [];
+        for (const s of sorted) {
+            if(combination.length===4) break;
+            if(sorted.filter(s2=>s2.idx===s.idx).length === 2) combination.push(s)
+        }
+        const kickers = sorted.filter(s => !combination.map(c=>c.idx).includes(s.idx))
+        combination.push(kickers[0])
+        return combination && {combination, name: "Two pairs", priority: 2.5}
     }
 
 
@@ -282,11 +294,13 @@ export default class Poker {
             obj[s.value].push(s);
         }
         const matched = Object.keys(obj).find(key => obj[key].length === count);
-        const combination = obj[matched];
+        let combination = obj[matched];
         const kickersCount = -7 - count;
         const kickers = sorted.filter(c => c.value !== matched)
             .splice(kickersCount - 2, 5 - count);
-        return combination && {combination, kickers, name: names[count], priority: count}
+        if(!combination) return;
+        combination = combination.concat(kickers);
+        return {combination,  name: names[count], priority: count}
     }
 
 
