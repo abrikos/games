@@ -51,7 +51,8 @@ const potSchema = new Schema({
     rounds: [roundSchema],
 
     deck: [cardSchema],
-    closed: Boolean
+    closed: Boolean,
+    active: {type:Boolean, default: true}
 }, {
     timestamps: {createdAt: 'createdAt'},
     toObject: {virtuals: true},
@@ -220,7 +221,12 @@ modelSchema.virtual('potBets')
 
 modelSchema.virtual('pot')
     .get(function () {
-        return this.pots.find(p => !p.closed);
+        return this.pots.find(p => p.active);
+    });
+
+modelSchema.virtual('potsOpen')
+    .get(function () {
+        return this.pots.filter(p => !p.closed);
     });
 
 modelSchema.virtual('round')

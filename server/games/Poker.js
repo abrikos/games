@@ -204,28 +204,65 @@ export default class Poker {
 
     }
 
-    _winners(sites) {
-        const maxPriority = sites.sort((b,a)=>a.result.priority - b.result.priority )[0].result.priority;
-        const tops = sites.filter(c => c.result.priority === maxPriority);
-        let top = this._checkCombinations('combination',tops, 0);
-        if(!top) top =  this._checkCombinations('kickers',tops, 0);
-        console.log(tops.map(t=>this._combinationSum(t.result.combination)));
+    _finishPot(record) {
+        record.pot.closed = true;
+        for(const pot of record.potsOpen){
+            for(const site of pot.sites){
+                site.result = this._combination(site.cards, pot.rounds[pot.rounds.length - 1].cards)
+            }
+            const winners = this._winners(pot.sites);
+        }
 
-        if(!top){
+        logger.info('TODO get winners')
+    }
+
+
+    _winners(sites) {
+        const maxPriority = sites.sort((b, a) => a.result.priority - b.result.priority)[0].result.priority;
+        const tops = sites.filter(c => c.result.priority === maxPriority);
+        const name = tops[0].result.combination.name;
+        switch (name) {
+            case "Flush royal":
+                return [tops[0]];
+            case "Street flush":
+            case "Flush":
+            case "Care":
+            case "Street":
+            case "Set":
+                let top5 = 0;
+                for(const t of tops){
+                    if(t.result.max.idx > top5) top5 = t.result.max.idx;
+                }
+                return [tops.filter(t=>t.result.max === top5)]
+            case "Two pairs":
+                let top2 = {result:{sum:0}};
+                for(const t of tops){
+                    if(t.result.sum > top2.result.sum) top2 = t;
+                }
+                return [top2]
+
+
+
+
+        }
+        let top = this._checkCombinations('combination', tops, 0);
+        if (!top) top = this._checkCombinations('kickers', tops, 0);
+        console.log(tops.map(t => this._combinationSum(t.result.combination)));
+        console.log(2 + 1 + 1 + 1+ 1, 11 + 10 + 9+ 8 + 6)
+        if (!top) {
             logger.info('DRAW')
-        }else{
+        } else {
 
         }
     }
 
 
-
     _combinationSum(combination) {
-        return combination.map(c=>c.idx).reduce((a,b)=>a+b)
+        return combination.map(c => c.idx).reduce((a, b) => a + b)
     }
 
     _checkCombinations(type, tops, level) {
-        if(!tops[0].result[type][level]) return;
+        if (!tops[0].result[type][level]) return;
         if (tops.length > 1) {
             let max2 = 0;
             for (const s of tops) {
@@ -262,13 +299,12 @@ export default class Poker {
         if (double) return double;
         const pair = this._getByValues(2, sorted);
         if (pair) return pair;
-        const one = this._getHighCard(sorted);
-        return one;
-
+        return this._getHighCard(sorted);
     }
 
     _getHighCard(source) {
-        return {combination: source[0], kickers: source.splice(1, 4), name: "High card", priority: 1}
+        const combination = source.splice(0, 5);
+        return {combination, name: "High card", priority: 1}
     }
 
     _getDouble(source) {
@@ -276,12 +312,12 @@ export default class Poker {
 
         const combination = [];
         for (const s of sorted) {
-            if(combination.length===4) break;
-            if(sorted.filter(s2=>s2.idx===s.idx).length === 2) combination.push(s)
+            if (combination.length === 4) break;
+            if (sorted.filter(s2 => s2.idx === s.idx).length === 2) combination.push(s)
         }
-        const kickers = sorted.filter(s => !combination.map(c=>c.idx).includes(s.idx))
+        const kickers = sorted.filter(s => !combination.map(c => c.idx).includes(s.idx))
         combination.push(kickers[0])
-        return combination && {combination, name: "Two pairs", priority: 2.5}
+        return combination && {combination, sum: this._combinationSum(combination), name: "Two pairs", priority: 2.5}
     }
 
 
@@ -298,9 +334,9 @@ export default class Poker {
         const kickersCount = -7 - count;
         const kickers = sorted.filter(c => c.value !== matched)
             .splice(kickersCount - 2, 5 - count);
-        if(!combination) return;
+        if (!combination) return;
         combination = combination.concat(kickers);
-        return {combination,  name: names[count], priority: count}
+        return {combination, max: combination[0], name: names[count], priority: count}
     }
 
 
@@ -318,13 +354,13 @@ export default class Poker {
         let priority;
         if (straight) {
             flush = straight.combination;
-            name = flush[0].idx === 12 ? 'Flush Royal' : 'Straight flush'
+            name = flush[0].idx === 12 ? 'Flush Royal' : 'Straight flush';
             priority = 7
         } else {
             name = 'Flush';
             priority = 6;
         }
-        return flush && {combination: flush, max: flush[0], min: flush[flush.length - 1], straight: !!straight, name, priority}
+        return flush && {combination: flush, max: flush[0], sum: this._combinationSum(flush), straight: !!straight, name, priority}
     }
 
 
@@ -346,12 +382,9 @@ export default class Poker {
             }
             if (straight.length === 5) break;
         }
-        return straight.length === 5 && {combination: straight, max: straight[0], min: straight[straight.length - 1], name: 'Stright', priority: 5}
+        return straight.length === 5 && {combination: straight, sum: this._combinationSum(straight), name: 'Stright', priority: 5}
     }
 
-    _finishPot(record) {
-        logger.info('TODO get winners')
-    }
 
     async stakeChange(id, userId, postBody) {
         const record = await this.getRecord(id);
