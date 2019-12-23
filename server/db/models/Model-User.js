@@ -11,9 +11,7 @@ const modelSchema = new Schema({
         language_code: String,
         realMode: {type: Boolean},
         balanceReal: {type: Number},
-        balanceVirtual: {type: Number},
-        referrals: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
-        group: {type: mongoose.Schema.Types.ObjectId, ref: 'Group'},
+        balanceVirtual: {type: Number, default:10000000000},
     },
     {
         timestamps: {createdAt: 'createdAt'},

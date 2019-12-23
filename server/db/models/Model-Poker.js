@@ -52,7 +52,6 @@ const potSchema = new Schema({
 
     deck: [cardSchema],
     closed: Boolean,
-    active: {type:Boolean, default: true}
 }, {
     timestamps: {createdAt: 'createdAt'},
     toObject: {virtuals: true},
@@ -88,6 +87,7 @@ modelSchema.statics.populationBak = [
 ];
 
 
+
 modelSchema.methods.siteOfPlayer = function (player) {
     return this.sites.find(s => this.comparePlayers(s.player, player));
 };
@@ -99,9 +99,9 @@ modelSchema.methods.playerSumBet = function (player) {
 };
 
 modelSchema.methods.betsOfPlayer = function (player) {
-    if (!this.pot || !this.potBets) return [];
+    //if (!this.pot || !this.potBets) return [];
     const site = this.siteOfPlayer(player);
-    return this.round.bets.filter(b => b.site.equals(site._id));
+    return this.pot.round.bets.filter(b => b.site.equals(site._id));
     //return this.potBets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter(b => b.site.equals(site._id))
 };
 
@@ -155,9 +155,9 @@ modelSchema.virtual('mySumBets')
 
 modelSchema.virtual('sitesBetSum')
     .get(function () {
-        if (!this.round.bets) return [];
+        if (!this.pot.round.bets) return [];
         const bets = {};
-        for (const bet of this.round.bets) {
+        for (const bet of this.pot.round.bets) {
             if (!bets[bet.site]) bets[bet.site] = 0;
             bets[bet.site] += bet.value
         }
@@ -168,7 +168,7 @@ modelSchema.virtual('sitesBetSum')
 
 modelSchema.virtual('maxBet')
     .get(function () {
-        if (!this.round.bets) return 0;
+        if (!this.pot.round.bets) return 0;
         let max = 0;
         for (const site of this.sitesBetSum) {
             if (site.sum > max) max = site.sum;
@@ -179,13 +179,13 @@ modelSchema.virtual('maxBet')
 
 modelSchema.virtual('turnSite')
     .get(function () {
-        return this.sites.id(this.round.turn);
+        return this.sites.id(this.pot.round.turn);
     });
 
 modelSchema.virtual('ftrCards')
     .get(function () {
         let cards = [];
-        for(const round of this.rounds){
+        for(const round of this.pot.rounds){
             cards = cards.concat(round.cards)
         }
         return cards;
@@ -193,22 +193,21 @@ modelSchema.virtual('ftrCards')
 
 modelSchema.virtual('isMyTurn')
     .get(function () {
-        return this.playerSite && this.playerSite.equals(this.round.turn);
+        return this.playerSite && this.playerSite.equals(this.pot.round.turn);
     });
 
 
-modelSchema.virtual('potSum')
+potSchema.virtual('sum')
     .get(function () {
-
-        if (!this.pot || !this.potBets) return [];
         let sum = 0;
-        for (const bet of this.potBets) {
+        for (const bet of this.bets) {
+
             sum += bet.value;
         }
         return sum;
     });
 
-modelSchema.virtual('potBets')
+potSchema.virtual('bets')
     .get(function () {
         let bets = [];
         for (const round of this.rounds) {
@@ -219,9 +218,16 @@ modelSchema.virtual('potBets')
     });
 
 
+
+modelSchema.virtual('potPrev')
+    .get(function () {
+        const closed =this.pots.filter(p=>p.closed);
+        return closed[closed.length - 1];
+    });
+
 modelSchema.virtual('pot')
     .get(function () {
-        return this.pots.find(p => p.active);
+        return this.potsOpen[this.potsOpen.length-1];
     });
 
 modelSchema.virtual('potsOpen')
@@ -229,24 +235,37 @@ modelSchema.virtual('potsOpen')
         return this.pots.filter(p => !p.closed);
     });
 
+potSchema.virtual('round')
+    .get(function () {
+        return this.rounds[this.rounds.length - 1]
+    });
+
+modelSchema.virtual('nextTurn')
+    .get(function () {
+        let idx = this.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
+        if (idx === this.sitesOfPot.length) idx = 0;
+        return this.sitesOfPot[idx];
+    });
+
+/*
 modelSchema.virtual('round')
     .get(function () {
-        if (!this.pot) return [];
-        return this.pot.rounds[this.pot.rounds.length - 1]
+        return this.pot.round
     });
 
 modelSchema.virtual('rounds')
     .get(function () {
         return this.pot ? this.pot.rounds : [];
-        /*if (!this.currentPot) return [];
+        /!*if (!this.currentPot) return [];
         let rounds = this.rounds.filter(r => r.pot.equals(this.currentPot._id));
 
         if (!rounds.length) {
             this.rounds.push({pot: this.currentPot});
             rounds = this.rounds;
         }
-        return rounds;*/
+        return rounds;*!/
     });
+*/
 
 
 modelSchema.virtual('sitesActive')
@@ -256,8 +275,8 @@ modelSchema.virtual('sitesActive')
 
 modelSchema.virtual('lastBet')
     .get(function () {
-        if (!this.round || !this.round.bets) return null;
-        return this.round.bets[this.round.bets.length - 1];
+        if (!this.pot.round || !this.pot.round.bets) return null;
+        return this.pot.round.bets[this.pot.round.bets.length - 1];
     });
 
 

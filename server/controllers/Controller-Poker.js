@@ -3,29 +3,47 @@ import pokerLogic from "server/games/Poker";
 
 const passportLib = require('server/lib/passport');
 const logger = require('logat');
-//Mongoose.Poker.deleteMany().exec(console.log);
+
+//Mongoose.User.create({id: 1, photo_url:'https://ktonanovenkogo.ru/image/bot-chto-takoe.jpg', first_name:'Bot 1'})    .then(console.log);
+
+
 
 module.exports.controller = async function (app) {
+    console.log('Poker controller starts')
     const Poker = new pokerLogic(app);
+    const u1 = "5dde42f608810e33ea74b73c";
+    const u2 = "5dde5e2f422b1d49bb8d53cc";
+    const u3 = "5dff2858ed5d7264b171350f";
+    const u4 = "5dff2858ed5d7264b1713510";
 
-    if (0) {
-
-        const u1 = "5dde42f608810e33ea74b73c";
-        const u2 = "5dde5e2f422b1d49bb8d53cc";
+    if (1) {
+        //await Mongoose.Poker.deleteMany();
 
         let record = await Poker.create({}, u1);
+        console.log('Table created')
         record = await Poker.join(record.id, u2);
-        record = await Poker.bet(record.id, u1, 6);
-        record = await Poker.bet(record.id, u2, 1);
-        console.log(record.sites.id(record.round.turn));
-        /*
-        console.log(record.round);
-        record = await Poker.bet(record.id, u2, 1);
-        console.log(record.round);
-        record = await Poker.bet(record.id, u1, 1);
-        console.log(record.round);
+        record = await Poker.join(record.id, u3);
+        console.log('3 joined')
+        record = await Poker.newPot(record.id);
+        record = await Poker.bet(record.id, u3, 10);
+        record = await Poker.bet(record.id, u1, 5);
         record = await Poker.bet(record.id, u2, 0);
-        console.log(record.round);*/
+
+        console.log('FLOP:')
+        console.log('rize 5:')
+        record = await Poker.bet(record.id, u1, 5);
+        console.log('fold:')
+        record = await Poker.bet(record.id, u2, -1);
+        console.log('call 5:')
+        record = await Poker.bet(record.id, u3, 5);
+
+        console.log('TURN:');
+        record = await Poker.bet(record.id, u1, 5);
+        record = await Poker.bet(record.id, u3, 5);
+
+        console.log('RIVER:');
+        record = await Poker.bet(record.id, u1, 5);
+        record = await Poker.bet(record.id, u3, 5);
     }
 
 
@@ -45,7 +63,7 @@ module.exports.controller = async function (app) {
     });
 
     app.post('/api/poker/:id/fold', passportLib.isLogged, (req, res) => {
-        Poker.fold(req.params.id, req.session.userId);
+        Poker.bet(req.params.id, req.session.userId, -1);
         res.sendStatus(200)
     });
 
@@ -90,16 +108,16 @@ module.exports.controller = async function (app) {
         let table;
         if (!random) {
             const h = [
-                ['H8', 'H8'],
-                ['DK', 'HJ'],
-                ['CK', 'S7']
+                ['H3', 'S3'],
+                //['C10', 'SK']
             ];
             for (let i = 0; i < h.length; i++) {
                 hands.push({cards: [Poker._card(h[i][0]), Poker._card(h[i][1])]});
                 deck = deck.concat(h[i])
             }
-            const t = ['SK', 'H2', 'D9', 'C9', 'C2'];
-            //const t = ['H2', 'D7', 'D8', 'DA', 'D3'];
+            const t = ['D3', 'S9', 'H8', 'CJ', 'C5'];
+            //const t = ['HQ', 'DA', 'HA', 'D3', 'H8'];
+            //const t = ['H2', 'D3', 'D4', 'D5', 'D3'];
             deck = deck.concat(t);
             table = deck.splice(h.length * 2, 5).map(c => Poker._card(c));
         } else {
@@ -113,17 +131,21 @@ module.exports.controller = async function (app) {
 
         for (const c of hands) {
             c.result = Poker._combination(c.cards, table)
+            logger.info(c.result)
         }
 
         const winners = Poker._winners(hands);
         return {hands, table, winners}
     }
 
-    testDeck()
+    //testDeck()
 
     app.post('/api/poker/deck', (req, res) => {
         res.send(testDeck())
     });
+
+
+
 
 
     app.post('/api/poker/:id', passportLib.isLogged, async (req, res) => {

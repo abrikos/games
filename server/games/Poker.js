@@ -28,6 +28,11 @@ export default class Poker {
     }
 
     get _deck() {
+        let deck = ['H3', 'S3'];
+        deck = deck.concat(['HK', 'S2']);
+        deck = deck.concat(['HQ', 'SQ']);
+        deck = deck.concat(['D3', 'S9', 'H8', 'CJ', 'C5']);
+        return deck.reverse().map(c => this._card(c));
         return this._deckStraight.sort(function () {
             return 0.5 - Math.random()
         });
@@ -89,31 +94,35 @@ export default class Poker {
         record.realMode = player.realMode;
 
         await record.populate(Mongoose.Poker.population).execPopulate();
-        this._takeSite({player, record, userId});
+        this._takeSite({player, record});
         await record.save();
         this._websocketSend('create', record, userId);
         return record;
     }
 
     _takeSite({player, record, siteId}) {
+        if (!record.sites.find(s => !s.player)) return logger.warn('No sites available');
         const stake = record.options.blind * 100;
-        let site = record.sites.find(s => s._id.toString() === siteId);
-        if (!site) site = record.sites.find(s => !s.player);
+        let site = record.sites.find(s => s.equals(siteId));
+        if (!site) {
+            site = record.sites.find(s => !s.player);
+        }
         site.player = player;
         site.stake = stake;
         player.addBalance(-stake);
         if (record.sitesActive.length === 2) {
-            this._startPot(record);
+            //this._startPot(record);
             //await this._startGame();
             //this.logicNextTurn(this.sitesActive[0]);
         }
+        return site;
     }
 
     async join(id, userId, siteId) {
         const record = await this.getRecord(id);
         const player = await Mongoose.User.findById(userId);
-        if (record.siteOfPlayer(player)) return;
-        if (!record.canJoin) return;
+        if (record.siteOfPlayer(player)) return record;
+        if (!record.canJoin) return record;
         this._takeSite({player, record, siteId});
         this._websocketSend('join', record, player._id);
         await record.save();
@@ -121,9 +130,10 @@ export default class Poker {
     }
 
 
-    _startPot(record) {
-        console.log('POT to START');
-        const round = {turn: record.sitesActive[0]._id, type: this._roundTypes[0].name};
+    async newPot(id) {
+        const record = await this.getRecord(id);
+        if (record.pot) return;
+        const round = {turn: record.sitesActive[0], type: this._roundTypes[0].name};
         record.pots.push({
             deck: this._deck,
             bets: [],
@@ -144,41 +154,43 @@ export default class Poker {
         site1.blind = 2;
         this._bet(record, site0.player, record.options.blind);
         this._bet(record, site1.player, record.options.blind * 2);
+        await record.save()
+        return record;
     }
 
     _bet(record, player, value) {
         //if (record.logicPlayerBet(value, player)) return;
         const site = record.siteOfPlayer(player);
-
         const sumBet = record.playerSumBet(player);
-        logger.info(record.maxBet, sumBet, value);
         if (record.maxBet > sumBet + value) return logger.warn('Not enough to Call');
         site.stake -= value;
         const bet = {value, site};
         //site.bets.push(bet);
-        record.round.bets.push(bet);
-        let idx = record.sitesOfPot.map(s => s.toString()).indexOf(record.round.turn.toString()) + 1;
-        if (idx === record.sitesOfPot.length) idx = 0;
-        record.round.turn = record.sitesOfPot[idx];
+        record.pot.round.bets.push(bet);
+        record.pot.round.turn = record.nextTurn;
     }
 
     async bet(id, userId, value) {
         const record = await this.getRecord(id);
-        if (!record.turnSite.player.equals(userId)) return logger.warn('---------------Not you turn')
-        this._bet(record, userId, value);
+        const site = record.siteOfPlayer(userId);
+        if (!record.turnSite.player.equals(userId)) return logger.warn('---------------Not you turn');
+        if(value>site.stake) return logger.warn(`Bet ${value} more than stake ${site.stake}`);
+        if (value >= 0) {
+            this._bet(record, userId, value);
+            if(site.stake === value){
+                //All in
+                record.pots.push(record.pot);
+                record.pot.sites = record.pot.sites.filter(s => !s.equals(site._id));
+            }
+        } else {
+            //FOLD
+            record.pot.round.turn = record.nextTurn;
+            record.pot.sites = record.pot.sites.filter(s => !s.equals(site._id));
+        }
         this._checkNextRound(record);
         await record.save();
         this._websocketSend('bet', record);
-        return record;
-    }
 
-    async fold(id, userId) {
-        const record = await this.getRecord(id);
-        const site = record.siteOfPlayer(userId);
-        record.pot.sites = record.pot.sites.filter(s => !s.equals(site._id));
-        this._checkNextRound(record);
-        await record.save();
-        this._websocketSend('fold', record);
         return record;
     }
 
@@ -188,101 +200,68 @@ export default class Poker {
         const lastSite = record.sites.id(lastBet.site);
         const min = Math.min(...values);
         const max = Math.max(...values);
-        //logger.info(min , max , lastSite.blind )
-        if (min === max && lastSite.blind === 2) {
+
+        const pre = record.pot.round.type === 'pre' ? 2:0;
+        const finished = !((record.pot.round.bets.length - pre) % record.pot.sites.length)
+        //console.log(record.pot.round.type, record.pot.round.bets.length ,'%',record.pot.sites.length , '=', (record.pot.round.bets.length ) % record.pot.sites.length, finished)
+        if (min === max && finished) {
             this._nextRound(record)
         }
     }
 
     _nextRound(record) {
         const newRoundType = this._roundTypes[record.pot.rounds.length];
-        if (record.round.type === this._roundTypes[this._roundTypes.length - 1].name) {
+
+        //if (record.pot.round.type === this._roundTypes[this._roundTypes.length - 1].name) {
+        if(!newRoundType){
+            logger.info('FINISH POT');
             this._finishPot(record)
         } else {
-            record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.deck.splice(0, newRoundType.cards)});
+            logger.info('NEW ROUND', newRoundType.name);
+            record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
         }
 
     }
 
     _finishPot(record) {
-        record.pot.closed = true;
-        for(const pot of record.potsOpen){
-            for(const site of pot.sites){
-                site.result = this._combination(site.cards, pot.rounds[pot.rounds.length - 1].cards)
-            }
-            const winners = this._winners(pot.sites);
-        }
+        const table = record.pot.rounds[record.pot.rounds.length - 1].cards;
+        for (const pot of record.potsOpen) {
+            for (const s of pot.sites) {
+                const site = record.sites.id(s);
+                //logger.info(site)
+                site.result = this._combination(site.cards, table)
 
-        logger.info('TODO get winners')
+            }
+
+            const winners = this._winners(pot.sites.map(s=>record.sites.id(s)));
+            for (const site of winners) {
+                site.stake += pot.sum / winners.length;
+            }
+        }
+        record.pot.closed = true;
+        //this._startPot(record)
     }
 
 
     _winners(sites) {
         const maxPriority = sites.sort((b, a) => a.result.priority - b.result.priority)[0].result.priority;
         const tops = sites.filter(c => c.result.priority === maxPriority);
-        const name = tops[0].result.combination.name;
-        switch (name) {
-            case "Flush royal":
-                return [tops[0]];
-            case "Street flush":
-            case "Flush":
-            case "Care":
-            case "Street":
-            case "Set":
-                let top5 = 0;
-                for(const t of tops){
-                    if(t.result.max.idx > top5) top5 = t.result.max.idx;
-                }
-                return [tops.filter(t=>t.result.max === top5)]
-            case "Two pairs":
-                let top2 = {result:{sum:0}};
-                for(const t of tops){
-                    if(t.result.sum > top2.result.sum) top2 = t;
-                }
-                return [top2]
-
-
-
-
+        const name = tops[0].result.name;
+        logger.info(name)
+        let sum = 0;
+        const p = tops[0].result.sum ? 'sum' : 'idx'
+        for (const t of tops) {
+            if (t.result[p] > sum) sum = t.result[p];
         }
-        let top = this._checkCombinations('combination', tops, 0);
-        if (!top) top = this._checkCombinations('kickers', tops, 0);
-        console.log(tops.map(t => this._combinationSum(t.result.combination)));
-        console.log(2 + 1 + 1 + 1+ 1, 11 + 10 + 9+ 8 + 6)
-        if (!top) {
-            logger.info('DRAW')
-        } else {
+        return tops.filter(t => t.result[p] === sum)
 
-        }
     }
 
 
     _combinationSum(combination) {
-        return combination.map(c => c.idx).reduce((a, b) => a + b)
+        return combination.map(c => 2 ** c.idx).reduce((a, b) => a + b)
     }
 
-    _checkCombinations(type, tops, level) {
-        if (!tops[0].result[type][level]) return;
-        if (tops.length > 1) {
-            let max2 = 0;
-            for (const s of tops) {
-                //logger.info(level,  max2);
-                //logger.info(level, s.result.combination[level], s.result.combination[level].idx, max2)
-                if (s.result[type][level].idx > max2) max2 = s.result[type][level].idx;
-            }
-
-            if (!max2) return;
-            const tops2 = tops.filter(s => s.result[type][level].idx === max2);
-            if (tops2.length > 1) {
-                return this._checkCombinations(type, tops2, level + 1)
-            } else {
-                return tops2[0]
-            }
-
-        } else {
-            return tops[0]
-        }
-    }
 
     _combination(hand, table) {
         const sorted = hand.concat(table).sort((a, b) => b.idx - a.idx);
@@ -304,18 +283,17 @@ export default class Poker {
 
     _getHighCard(source) {
         const combination = source.splice(0, 5);
-        return {combination, name: "High card", priority: 1}
+        return {combination, sum: this._combinationSum(combination), name: "High card", priority: 1}
     }
 
-    _getDouble(source) {
-        const sorted = Object.assign([], source);
-
+    _getDouble(sorted) {
         const combination = [];
         for (const s of sorted) {
             if (combination.length === 4) break;
             if (sorted.filter(s2 => s2.idx === s.idx).length === 2) combination.push(s)
         }
         const kickers = sorted.filter(s => !combination.map(c => c.idx).includes(s.idx))
+        if (combination.length !== 4) return;
         combination.push(kickers[0])
         return combination && {combination, sum: this._combinationSum(combination), name: "Two pairs", priority: 2.5}
     }
@@ -336,53 +314,72 @@ export default class Poker {
             .splice(kickersCount - 2, 5 - count);
         if (!combination) return;
         combination = combination.concat(kickers);
-        return {combination, max: combination[0], name: names[count], priority: count}
+        return {combination, sum: this._combinationSum(combination), name: names[count], priority: count}
     }
 
 
-    _getFlush(source) {
-        const sorted = Object.assign([], source);
+    _getFlush(sorted) {
         const suites = {};
         let flush;
         for (const s of sorted) {
             if (!suites[s.suit]) suites[s.suit] = [];
             suites[s.suit].push(s);
-            if (suites[s.suit].length === 5) flush = suites[s.suit];
+            //logger.info(s)
+
+            if (suites[s.suit].length === 5) {
+                flush = suites[s.suit];
+            }
         }
-        const straight = flush && this._getStraight(flush);
+        //logger.info(flush.splice(0,5))
+        if (!flush) return;
+        const straight = this._getStraight(flush);
         let name;
         let priority;
+        let combination;
         if (straight) {
-            flush = straight.combination;
+            combination = straight.combination;
             name = flush[0].idx === 12 ? 'Flush Royal' : 'Straight flush';
             priority = 7
         } else {
             name = 'Flush';
             priority = 6;
+            combination = flush.splice(0, 5)
         }
-        return flush && {combination: flush, max: flush[0], sum: this._combinationSum(flush), straight: !!straight, name, priority}
+        //logger.info(combination)
+        return {combination, max: combination[0], sum: this._combinationSum(combination), straight: !!straight, name, priority}
     }
 
 
     _getStraight(source) {
+        function check(card) {
+            try {
+                return sorted.find(c => c.idx === card.idx - 1)
+                    && sorted.find(c => c.idx === card.idx - 2)
+                    && sorted.find(c => c.idx === card.idx - 3)
+                    && sorted.find(c => c.idx === card.idx - 4)
+            } catch (e) {
+                return false;
+            }
+        }
+
         const sorted = Object.assign([], source);
         if (sorted[0].idx === 12) {
             const ace = Object.assign({}, sorted[0]);
             ace.idx = -1;
             sorted.push(ace)
         }
-        const straight = [];
-        for (let i = 0; i < sorted.length; i++) {
-
-            if (sorted[i + 1]) {
-                if (sorted[i].idx - sorted[i + 1].idx === 1) {
-                    if (!straight.length) straight.push(sorted[i]);
-                    straight.push(sorted[i + 1])
+        let combination = [];
+        for (const card of sorted) {
+            if (check(card)) {
+                combination.push(card);
+                for (let i = 1; i < 5; i++) {
+                    combination.push(sorted.find(c => c.idx === card.idx - i))
                 }
+                return {combination, max: combination[0], name: 'Straight', priority: 5}
             }
-            if (straight.length === 5) break;
         }
-        return straight.length === 5 && {combination: straight, sum: this._combinationSum(straight), name: 'Stright', priority: 5}
+
+
     }
 
 

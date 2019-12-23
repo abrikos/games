@@ -1,12 +1,25 @@
+import cardSchema from "./Model-Card";
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const logger = require('logat');
 
 
-const modelSchema = new Schema({
-    table: {type: mongoose.Schema.Types.ObjectId, ref: 'Table', required: true},
-    sites: [{type: mongoose.Schema.Types.ObjectId, ref:'Site'}],
+const betSchema = new Schema({
+    value: {type: Number, default: 0},
     data: Object,
+    site: mongoose.Schema.Types.ObjectId
+}, {
+    timestamps: {createdAt: 'createdAt'},
+    toObject: {virtuals: true},
+    toJSON: {virtuals: true}
+});
+
+const roundSchema = new Schema({
+    poker:{type:mongoose.Schema.Types.ObjectId, ref:'Poker'},
+    bets: [betSchema],
+    turn: mongoose.Schema.Types.ObjectId,
+    type: String,
+    cards: [cardSchema],
     closed: Boolean
 }, {
     timestamps: {createdAt: 'createdAt'},
@@ -14,10 +27,18 @@ const modelSchema = new Schema({
     toJSON: {virtuals: true}
 });
 
-modelSchema.virtual('bets')
-    .get(function () {
-        return this.pot.bets;
-    });
+
+const modelSchema = new Schema({
+    sites: [{type:mongoose.Schema.Types.ObjectId, ref:'Site'}],
+    rounds: [roundSchema],
+
+    deck: [cardSchema],
+    closed: Boolean,
+}, {
+    timestamps: {createdAt: 'createdAt'},
+    toObject: {virtuals: true},
+    toJSON: {virtuals: true}
+});
 
 modelSchema.virtual('sum')
     .get(function () {
@@ -30,13 +51,6 @@ modelSchema.virtual('round')
         return this.rounds.find(r=>!r.closed);
     });
 
-
-modelSchema.virtual('rounds', {
-    ref: 'Round',
-    localField: '_id',
-    foreignField: 'pot',
-    justOne: false // set true for one-to-one relationship
-});
 
 export default mongoose.model("Pot", modelSchema)
 
