@@ -6,7 +6,10 @@ const logger = require('logat');
 
 //Mongoose.User.create({id: 1, photo_url:'https://ktonanovenkogo.ru/image/bot-chto-takoe.jpg', first_name:'Bot 1'})    .then(console.log);
 
-
+Mongoose.Poker.findById("5e034f2a2fb1d345529bc492")
+    .then(p=>{
+        logger.info(p.pots)
+    })
 
 module.exports.controller = async function (app) {
     console.log('Poker controller starts')
@@ -16,7 +19,7 @@ module.exports.controller = async function (app) {
     const u3 = "5dff2858ed5d7264b171350f";
     const u4 = "5dff2858ed5d7264b1713510";
 
-    if (1) {
+    if (0) {
         //await Mongoose.Poker.deleteMany();
 
         let record = await Poker.create({}, u1);

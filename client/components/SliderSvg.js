@@ -5,31 +5,39 @@ import React from "react";
 export default function SliderSvg(props) {
     const [coordinates, setCoordinates] =React.useState( {cx:20, cy:110});
     const [clickPosition, setClickPosition] =React.useState( {x:0, y:0});
-    const [dragged, setDragged] =React.useState( false);
+    const [dragging, setDragging] =React.useState( false);
+    const [origin, setOrigin] = React.useState({ x: 0, y: 0 });
 
     function down(e) {
-        setDragged(true);
-        console.log({x:e.clientX, y:e.clientY})
-        setClickPosition({x:e.clientX, y:e.clientY})
+        setDragging(true);
+        console.log("DOWN",{x:e.clientX, y:e.clientY})
+        //setClickPosition({x:e.clientX, y:e.clientY})
     }
 
     function drag(e) {
-        if(dragged) console.log(e.pageX, e.movementX, e);
-        coordinates.cy += clickPosition.x -e.clientX;
-        //console.log(coordinates, clickPosition.x, e.clientX)
-        setCoordinates(coordinates)
+        if(!dragging) return;
+        const c ={cx:coordinates.cx};
+        c.cy = e.pageY;
+        console.log(c, e.clientY, e.pageY, e.movementY)
+        setCoordinates(c)
     }
 
     function up(e) {
-        setDragged(false)
+        console.log("UP",{x:e.clientX, y:e.clientY})
+        setDragging(false)
     }
+
+
 
     return <svg
         xmlns="http://www.w3.org/2000/svg"
         {...props}
+
     >
-        <rect x={15} width={10} height={200} fill={"#999999"} />
-        <circle {...coordinates} r={20} fill={"#FF0000"} onMouseDown={down} onMouseMove={drag} onMouseUp={up}/>
-        <text y={50}>{JSON.stringify(clickPosition)}</text>
+        <g onMouseDown={down} onMouseMove={drag} onMouseUp={up}>
+        <rect x={15} width={10} height={600} fill={"#999999"} />
+        <circle {...coordinates} r={20} fill={"#FF0000"} />
+        <text x={-50} y={50}>{JSON.stringify(coordinates)}</text>
+        </g>
     </svg>
 }

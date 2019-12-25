@@ -12,6 +12,7 @@ import Loader from "client/components/Loader";
 
 export default function Layout(props) {
     const [balance, setBalance] = useState({});
+    const [userName, setUsername] = useState();
     let {children, alert, ...rest} = props;
 
     function loadBalance() {
@@ -25,7 +26,7 @@ export default function Layout(props) {
         {label: t('Poker'), path: '/poker'},
         {label: t('Filler'), path: '/filler'},
         {label: t('BlackJack'), path: '/black-jack'},
-        {label: `${props.authenticatedUser && props.authenticatedUser.first_name} (${balance.amount})`, path: '/cabinet', hidden: !props.authenticatedUser},
+        {label: `${userName || (props.authenticatedUser && props.authenticatedUser.first_name)} (${balance.amount})`, path: '/cabinet', hidden: !props.authenticatedUser},
         {label: t('Login'), path: '/login', hidden: props.authenticatedUser},
         {label: t('Logout'), onClick: props.logOut, hidden: !props.authenticatedUser},
         {
@@ -35,11 +36,12 @@ export default function Layout(props) {
             ]
         },
     ];
+
+
     useEffect(() => {
         props.checkAuth()
             .then(res => {
                 loadBalance();
-                //setLoading(false)
             })
 
     }, []);
@@ -53,6 +55,8 @@ export default function Layout(props) {
             case 'stake/change':
                 loadBalance();
                 break;
+            case "user-profile":
+                setUsername(props.message.userName)
             default:
         }
 

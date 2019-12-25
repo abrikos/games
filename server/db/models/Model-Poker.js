@@ -155,6 +155,7 @@ modelSchema.virtual('mySumBets')
 
 modelSchema.virtual('sitesBetSum')
     .get(function () {
+        if(!this.pot) return {};
         if (!this.pot.round.bets) return [];
         const bets = {};
         for (const bet of this.pot.round.bets) {
@@ -168,6 +169,7 @@ modelSchema.virtual('sitesBetSum')
 
 modelSchema.virtual('maxBet')
     .get(function () {
+        if (!this.pot) return 0;
         if (!this.pot.round.bets) return 0;
         let max = 0;
         for (const site of this.sitesBetSum) {
@@ -179,11 +181,13 @@ modelSchema.virtual('maxBet')
 
 modelSchema.virtual('turnSite')
     .get(function () {
+        if (!this.pot) return this.sites[0]._id;
         return this.sites.id(this.pot.round.turn);
     });
 
 modelSchema.virtual('ftrCards')
     .get(function () {
+        if (!this.pot) return [];
         let cards = [];
         for(const round of this.pot.rounds){
             cards = cards.concat(round.cards)
@@ -193,6 +197,7 @@ modelSchema.virtual('ftrCards')
 
 modelSchema.virtual('isMyTurn')
     .get(function () {
+        if(!this.pot) return false;
         return this.playerSite && this.playerSite.equals(this.pot.round.turn);
     });
 
@@ -242,6 +247,7 @@ potSchema.virtual('round')
 
 modelSchema.virtual('nextTurn')
     .get(function () {
+        if(!this.pot) return;
         let idx = this.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
         if (idx === this.sitesOfPot.length) idx = 0;
         return this.sitesOfPot[idx];
@@ -275,6 +281,7 @@ modelSchema.virtual('sitesActive')
 
 modelSchema.virtual('lastBet')
     .get(function () {
+        if(!this.pot) return;
         if (!this.pot.round || !this.pot.round.bets) return null;
         return this.pot.round.bets[this.pot.round.bets.length - 1];
     });

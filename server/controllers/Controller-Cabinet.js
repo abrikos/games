@@ -44,12 +44,16 @@ module.exports.controller = function (app) {
     });
 
     app.post('/api/cabinet/user/save', passportLib.isLogged, (req, res) => {
+        logger.info(req.body)
         Mongoose.User.findById(req.session.userId)
             .then(user=>{
                 user.photo_url = req.body.avatar;
                 user.first_name = req.body.nick;
                 user.save();
                 res.send(user)
+                app.locals.wss.clients.forEach(function each(client) {
+                    client.send(JSON.stringify({action:"user-profile", player:user._id, userName : user.first_name}));
+                });
             })
     });
 

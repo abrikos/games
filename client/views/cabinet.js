@@ -20,12 +20,15 @@ export default function Cabinet(props) {
             .then(setUser)
     }
 
-    function userSave() {
-        props.api('/cabinet/user/save',{avatar, nick})
+    function userSave(e) {
+        e.preventDefault()
+        props.api('/cabinet/user/save',props.formToObject(e.target))
             .then(setUser)
     }
 
 
+
+    console.log(user)
     return <div>
         <MyBreadCrumb items={[
             {label: t('Cabinet')},
@@ -33,18 +36,17 @@ export default function Cabinet(props) {
 
 
         <div className="text-center"><UserAvatar user={user}/></div>
-
+        <form onSubmit={userSave}>
         <div className="input-group mb-3">
-            <Input placeholder="Avatar URL" defaultValue={user.photo_url} onChange={e=>setAvatar(e.target.value)}/>
+            <Input placeholder="Avatar URL" defaultValue={user.photo_url} name="avatar" onChange={e=>setAvatar(e.target.value)}/>
         </div>
 
         <div className="input-group mb-3">
-            <Input placeholder="Nickname" defaultValue={user.first_name} onChange={e=>setNick(e.target.value)}/>
+            <Input placeholder="Nickname" defaultValue={user.first_name} name="nick"/>
         </div>
-        <Button onClick={userSave} className="input-group-text" id="basic-addon3">{t('Save')}</Button>
-
+        <Button className="input-group-text" id="basic-addon3">{t('Save')}</Button>
+        </form>
         {avatar && <img src={avatar} alt="new image" style={{maxWidth:150, maxHeight:150}}/>}
-        {nick}
     </div>
 
 }

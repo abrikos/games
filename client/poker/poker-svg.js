@@ -80,7 +80,7 @@ export default function PokerSvg(props) {
             </g>)}
             </g>
 
-            <SliderSvg x={40} y={50}/>
+            <SliderSvg x={width - 100} y={50}/>
         </svg>
     </div>
 }
