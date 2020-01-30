@@ -127,6 +127,11 @@ modelSchema.virtual('sitesNotFold')
     });
 
 
+modelSchema.virtual('playersCount')
+    .get(function () {
+        return this.sites.filter(s=>!!s.player).length;
+    });
+
 modelSchema.virtual('maxPlayers')
     .get(function () {
         return this.options.maxPlayers || MAX_PLAYERS

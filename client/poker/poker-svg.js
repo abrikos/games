@@ -2,16 +2,23 @@ import React, {useEffect, useState} from "react";
 import {navigate} from "hookrouter";
 import PlayCard from "client/components/PlayCard";
 import Loader from "client/components/Loader";
-import UserAvatarSvg from "client/components/UserAvatarSvg";
+import UserAvatarSvg from "client/poker/components/UserAvatarSvg";
 import AccessDenied from "client/service/access-denied";
 import {t} from "client/components/Translator";
 import MyBreadCrumb from "client/components/MyBreadCrumb";
 import * as Cards from "client/images/cards";
-import SliderSvg from "client/components/SliderSvg";
+import SliderSvg from "client/poker/SliderSvg";
+import ButtonSvg from "client/poker/components/ButtonSvg";
+import PlayerSiteSvg from "client/poker/components/PlayerSiteSvg";
+import configSvg from "./config-svg";
+
+const WIDTH = configSvg.width;
+const HEIGHT = WIDTH * 3 / 4;
+const TABLE_RADIUS=(HEIGHT / 2)  * 3 / 4;
+
 
 export default function PokerSvg(props) {
-    const width = 1200;
-    const height = 800;
+
 
     const [table, setTable] = useState();
 
@@ -36,7 +43,7 @@ export default function PokerSvg(props) {
     }
 
 
-    function joinTable(id) {
+    function takeSite(id) {
         props.api(`/poker/${table.id}/join/site/${id}`)
     }
 
@@ -53,11 +60,10 @@ export default function PokerSvg(props) {
 
 
     function coordinates(n, length) {
-        const R = 300;
+        const R = TABLE_RADIUS;
         const angle = (90 - 360 / length *  -n)  ;
-        const x = R * Math.cos(angle* Math.PI / 180) + width / 2;
-        const y = R * Math.sin(angle* Math.PI / 180) + height / 2;
-        console.log(angle, Math.cos(angle), {x, y})
+        const x = R * Math.cos(angle* Math.PI / 180) + WIDTH / 2;
+        const y = R * Math.sin(angle* Math.PI / 180) + HEIGHT / 2;
         return {x, y}
     }
 
@@ -65,22 +71,25 @@ export default function PokerSvg(props) {
     if (!table) return <Loader/>;
     if (!props.authenticatedUser) return <AccessDenied/>;
 
-    console.log(table.sites)
 
     return <div>
         <MyBreadCrumb items={[{href: '/poker', label: t('Poker')}, {label: table.name}]}/>
-        <svg width={width} height={height} style={{border: "1px solid red"}} viewBox={`0 0 ${width} ${height}`}>
-            <rect x={0} y={0} width={width} height={height} fill={"#35654d"}/>
+        <svg width={WIDTH} height={HEIGHT} style={{border: "1px solid red"}} viewBox={`0 0 ${WIDTH} ${HEIGHT}`}>
+            <rect x={0} y={0} width={WIDTH} height={HEIGHT} fill={"#35654d"}/>
 
-            <g transform={"translate(0,-50)"}>
-            <circle cx={width/2} cy={height/2} r={300} opacity={.3} stroke={"#FF0000"}/>
+            <g transform={"translate(0,-100)"}>
+            <circle cx={WIDTH/2} cy={HEIGHT/2} r={TABLE_RADIUS} opacity={.3} stroke={"#FF0000"} transform={`translate(40,50)`}/>
 
-            {table.sites.map((s, i) =><g transform={"translate(-50,-50)"} key={i}>{s.player ?
-                <UserAvatarSvg site={s}  width={200} {...coordinates(i, table.sites.length)}/> :<rect {...coordinates(i, table.sites.length)} width={50} height={50}/>}
+            {table.sites.map((s, i) =><g key={i}>
+                <PlayerSiteSvg site={s} width={100} {...coordinates(i, table.sites.length)} takeSite={takeSite}/>
             </g>)}
             </g>
 
-            <SliderSvg x={width - 100} y={50}/>
+            <SliderSvg x={WIDTH - 100} y={50}/>
+            <g transform={`translate(0,${HEIGHT - 50})`}>
+                <ButtonSvg text={t('Leave')} onClick={()=>navigate(`/poker/${table.id}/leave`)} width={100} x={50}/>
+            </g>
+
         </svg>
     </div>
 }

@@ -124,15 +124,17 @@ export default class Poker {
         if (record.siteOfPlayer(player)) return record;
         if (!record.canJoin) return record;
         this._takeSite({player, record, siteId});
+        if(record.playersCount===2){
+            this._newPot(record);
+        }
         this._websocketSend('join', record, player._id);
         await record.save();
         return record;
     }
 
 
-    async newPot(id) {
-        const record = await this.getRecord(id);
-        if (record.pot) return;
+    _newPot(record) {
+        //if (record.pot) return;
         const round = {turn: record.sitesActive[0], type: this._roundTypes[0].name};
         record.pots.push({
             deck: this._deck,
@@ -140,6 +142,7 @@ export default class Poker {
             sites: record.sitesActive,
             rounds: [round]
         });
+        logger.info(record.sitesActive)
 
         for (const siteId of record.pot.sites) {
             const site = record.sites.id(siteId);
@@ -147,6 +150,7 @@ export default class Poker {
             const c2 = record.pot.deck.pop();
             site.cards = [c1, c2]
         }
+
         const site0 = record.sites.id(record.pot.sites[0]);
         const site1 = record.sites.id(record.pot.sites[1]);
 
@@ -154,8 +158,6 @@ export default class Poker {
         site1.blind = 2;
         this._bet(record, site0.player, record.options.blind);
         this._bet(record, site1.player, record.options.blind * 2);
-        await record.save()
-        return record;
     }
 
     _bet(record, player, value) {

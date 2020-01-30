@@ -17,7 +17,8 @@ export default function Routes(props){
         "/poker": () => <PokerList {...props}/>,
         "/poker/test": () => <PokerTest {...props}/>,
         "/poker/svg": () => <PokerSvg {...props}/>,
-        "/poker/:id": (params) => <PokerSvg {...params} {...props}/>,
+        "/pokerX/:id": (params) => <PokerSvg {...params} {...props}/>,
+        "/poker/:id": (params) => <PokerPlay {...params} {...props}/>,
         "/poker/:id/leave": (params) => <PokerLeaveConfirm {...params} {...props}/>,
         //"/filler": () => <HomeFiller {...props}/>,
 

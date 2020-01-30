@@ -6,11 +6,6 @@ const logger = require('logat');
 
 //Mongoose.User.create({id: 1, photo_url:'https://ktonanovenkogo.ru/image/bot-chto-takoe.jpg', first_name:'Bot 1'})    .then(console.log);
 
-Mongoose.Poker.findById("5e034f2a2fb1d345529bc492")
-    .then(p=>{
-        logger.info(p.pots)
-    })
-
 module.exports.controller = async function (app) {
     console.log('Poker controller starts')
     const Poker = new pokerLogic(app);
@@ -27,7 +22,8 @@ module.exports.controller = async function (app) {
         record = await Poker.join(record.id, u2);
         record = await Poker.join(record.id, u3);
         console.log('3 joined')
-        record = await Poker.newPot(record.id);
+        //TODO must be automatic new Pot
+        //record = await Poker.newPot(record.id);
         record = await Poker.bet(record.id, u3, 10);
         record = await Poker.bet(record.id, u1, 5);
         record = await Poker.bet(record.id, u2, 0);
@@ -156,10 +152,6 @@ module.exports.controller = async function (app) {
             .then(poker => {
                 poker.playerSite = poker.siteOfPlayer(req.session.userId);
                 if (poker.pot) poker.pot.deck = [];
-                if (0) poker.sites = poker.sites.map(s => {
-                    s.cards = [false, false];
-                    return s
-                });
                 res.send(poker)
             })
         //.catch(e => res.send({error: 500, message: e.message}))

@@ -4,15 +4,6 @@ import Message from "server/db/models/Model-Message";
 import Filler from "server/db/models/Model-Filler";
 import Log from "server/db/models/Model-Log";
 import Poker from "server/db/models/Model-Poker";
-import Site from "server/db/models/Model-Site";
-import Pot from "server/db/models/Model-Pot";
-import CardSchema from "server/db/models/Model-Card";
-/*
-import Site from "server/db/models/Model-Site";
-import Pot from "server/db/models/Model-Pot";
-import Round from "server/db/models/Model-Round";
-import Bet from "server/db/models/Model-Bet";
-*/
 
 const mongoose = require("mongoose");
 mongoose.set('useCreateIndex', true);
@@ -33,7 +24,7 @@ const Mongoose = {
         if (!cookie.length) return false;
         return cookie.indexOf(model.cookieId) !== -1;
     },
-    User, Referral, Message, Filler, Log, Poker, CardSchema, Site, Pot
+    User, Referral, Message, Filler, Log, Poker
 
 };
 export default Mongoose;
