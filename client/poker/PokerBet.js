@@ -36,7 +36,7 @@ export default function PokerBet(props) {
     }
 
     return <div className="bet-interface">
-        <Button color={'success'} disabled={maxBetValue<currentBetValue} onClick={call}>{t('Call')} {maxBetValue - currentBetValue}</Button>
+        <Button color={'success'} disabled={maxBetValue<=currentBetValue} onClick={call}>{t('Call')} {maxBetValue - currentBetValue}</Button>
         <Button disabled={maxBetValue!==currentBetValue} onClick={check}>{t('Check')}</Button>
         <Button color="warning" onClick={fold}>{t('Fold')}</Button>
         <hr/>

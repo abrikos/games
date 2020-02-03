@@ -8,6 +8,7 @@ export default new Schema({
     cards: [cardSchema],
     result: Object,
     blind: Number,
+    combination: String,
     position: {type: Number, default: 0},
 }, {
     toObject: {virtuals: true},

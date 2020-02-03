@@ -41,4 +41,10 @@ potSchema.virtual('lastRound')
         return this.rounds[this.rounds.length - 1];
     });
 
+potSchema.virtual('round')
+    .get(function () {
+        return this.rounds[this.rounds.length - 1]
+    });
+
+
 export default potSchema

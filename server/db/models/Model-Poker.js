@@ -1,6 +1,7 @@
 import moment from "moment";
 import siteSchema from "./Schema-Site";
 import potSchema from "./Schema-Pot";
+import Poker from "server/games/Poker";
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
@@ -38,7 +39,11 @@ modelSchema.statics.populationBak = [
 
 
 modelSchema.methods.siteOfPlayer = function (player) {
-    return this.sites.find(s => this.comparePlayers(s.player, player));
+    const site =  this.sites.find(s => this.comparePlayers(s.player, player));
+    if(this.potLast)
+        site.result = Poker.combination(site.cards, this.potLast.round.cards)
+    return site;
+
 };
 
 modelSchema.methods.playerSumBet = function (player) {
@@ -145,8 +150,8 @@ modelSchema.virtual('turnSite')
 
 modelSchema.virtual('ftrCards')
     .get(function () {
-        if (!this.pot) return [];
-        return this.pot.lastRound.cards;
+        if (!this.potLast) return [];
+        return this.potLast.lastRound.cards;
     });
 
 modelSchema.virtual('isMyTurn')
@@ -181,10 +186,11 @@ modelSchema.virtual('potsOpen')
         return this.pots.filter(p => !p.closed);
     });
 
-potSchema.virtual('round')
+modelSchema.virtual('potLast')
     .get(function () {
-        return this.rounds[this.rounds.length - 1]
+        return this.pots[this.pots.length - 1];
     });
+
 
 modelSchema.virtual('nextTurn')
     .get(function () {
