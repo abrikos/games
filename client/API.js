@@ -50,6 +50,24 @@ class API {
     async postData(path = '', data = {}) {
         console.log('POST', path)
         const url = '/api' + path;
+        return new Promise((reolve, reject) => {
+            axios.post(url, data)
+                .then(res => reolve(res.data))
+                .catch(err => {
+                    console.warn(err.response)
+                    reject(err)
+                })
+
+        })
+
+        //const start = new Date().valueOf();
+
+
+    }
+
+    async postDataBak(path = '', data = {}) {
+        console.log('POST', path)
+        const url = '/api' + path;
         //const start = new Date().valueOf();
         this.isLoading = true;
         try {
@@ -61,11 +79,11 @@ class API {
 
         } catch (e) {
 
-            if (!e.response){
+            if (!e.response) {
 
                 return {error: 500, message: e.toJSON().message}
             }
-            return {error: e.response.status, message:e.response.statusText}
+            return {error: e.response.status, message: e.response.statusText}
         }
 
     }

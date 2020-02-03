@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as serviceWorker from './serviceWorker';
-import AppHook from "client/AppHook";
+import AppHook from "client/AppStore";
 
 /*
 ReactDOM.render(<Application />, document.getElementById('root'));

@@ -10,7 +10,7 @@ import cookieParser from 'cookie';
 export default function App() {
 
     const [alert, setAlert] = useState({isOpen: false});
-    const [authenticatedUser, setAuth] = useState(false);
+    const [authenticatedUser, setAuthUser] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorPage, setErrorPage] = useState(false);
     const [message, setMessage] = useState({});
@@ -40,11 +40,17 @@ export default function App() {
         if (!websocket || websocket.readyState === 3) startWebSocket();
     }
 
+    function getUser(){
+        API.postData('/user/authenticated')
+            .then(setAuthUser);
+    }
 
     useEffect(() => {
         startWebSocket();
         setInterval(checkWebsocket, 1000);
+        getUser();
     }, [])
+
 
 
     const params = {
@@ -85,6 +91,20 @@ export default function App() {
             return res;
         },
 
+        async apiAuth(path, data){
+            return new Promise((resolve,reject)=>{
+                this.api(path, data)
+                    .then(res=>{
+                        setAuthUser(true)
+                        return resolve(res)
+                    })
+                    .catch(err=>{
+                        console.log(err)
+                        if(err.response.status===401) return document.location.href = '/api/not-logged';
+                    })
+            })
+        },
+
         onError(res) {
             switch (res.error) {
                 case 403:
@@ -104,14 +124,14 @@ export default function App() {
         },
 
         async checkAuth() {
-            const user = await API.postData('/isAuth');
-            if (!user.error) setAuth(user);
+            //const user = await API.postData('/isAuth');
+            //if (!user.error) setAuthUser(user);
         },
 
         logOut: () => {
             API.postData('/logout')
                 .then(res => {
-                    if (res.ok) setAuth(false);
+                    if (res.ok) setAuthUser(false);
                     navigate('/login');
                 })
         },

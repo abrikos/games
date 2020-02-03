@@ -1,4 +1,6 @@
 import moment from "moment";
+import siteSchema from "./Schema-Site";
+import potSchema from "./Schema-Pot";
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
@@ -6,58 +8,6 @@ const logger = require('logat');
 
 const MAX_PLAYERS = 3;
 const WAIT_PLAYER = 45;
-
-const cardSchema = new Schema({suit:String, value:String, idx: Number});
-
-const betSchema = new Schema({
-    value: {type: Number, default: 0},
-    data: Object,
-    site: mongoose.Schema.Types.ObjectId
-}, {
-    timestamps: {createdAt: 'createdAt'},
-    toObject: {virtuals: true},
-    toJSON: {virtuals: true}
-});
-
-const siteSchema = new Schema({
-    player: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-    stake: {type: Number, default: 0},
-    cards: [cardSchema],
-    result: Object,
-    blind: Number,
-    position: {type: Number, default: 0},
-}, {
-    toObject: {virtuals: true},
-    toJSON: {virtuals: true}
-});
-
-
-const roundSchema = new Schema({
-    bets: [betSchema],
-    turn: mongoose.Schema.Types.ObjectId,
-    type: String,
-    cards: [cardSchema],
-    closed: Boolean
-}, {
-    timestamps: {createdAt: 'createdAt'},
-    toObject: {virtuals: true},
-    toJSON: {virtuals: true}
-});
-
-
-
-const potSchema = new Schema({
-    sites: [mongoose.Schema.Types.ObjectId],
-    rounds: [roundSchema],
-
-    deck: [cardSchema],
-    closed: Boolean,
-}, {
-    timestamps: {createdAt: 'createdAt'},
-    toObject: {virtuals: true},
-    toJSON: {virtuals: true}
-});
-
 
 const modelSchema = new Schema({
         name: {type: String, required: [true, 'Name required']},
@@ -87,20 +37,21 @@ modelSchema.statics.populationBak = [
 ];
 
 
-
 modelSchema.methods.siteOfPlayer = function (player) {
     return this.sites.find(s => this.comparePlayers(s.player, player));
 };
 
 modelSchema.methods.playerSumBet = function (player) {
     const bets = this.betsOfPlayer(player);
-    if(!bets.length) return 0;
+    if (!bets.length) return 0;
     return bets.map(b => b.value).reduce((a, b) => a + b);
 };
 
 modelSchema.methods.betsOfPlayer = function (player) {
     //if (!this.pot || !this.potBets) return [];
     const site = this.siteOfPlayer(player);
+    if (!site) return [];
+    if (!this.pot) return [];
     return this.pot.round.bets.filter(b => b.site.equals(site._id));
     //return this.potBets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).filter(b => b.site.equals(site._id))
 };
@@ -129,7 +80,7 @@ modelSchema.virtual('sitesNotFold')
 
 modelSchema.virtual('playersCount')
     .get(function () {
-        return this.sites.filter(s=>!!s.player).length;
+        return this.sites.filter(s => !!s.player).length;
     });
 
 modelSchema.virtual('maxPlayers')
@@ -151,8 +102,9 @@ modelSchema.virtual('sitesOfPot')
 
 modelSchema.virtual('mySumBets')
     .get(function () {
-        if (!this.playerSite || !this.round || !this.round.bets) return 0;
-        const bets = this.betsOfPlayer(this.playerSite.player).map(item => item.value)
+        if (!this.playerSite) return 0;
+        const bets = this.betsOfPlayer(this.playerSite.player).map(item => item.value);
+
         if (!bets.length) return 0;
         return bets.reduce((a, b) => a + b);
 
@@ -160,7 +112,8 @@ modelSchema.virtual('mySumBets')
 
 modelSchema.virtual('sitesBetSum')
     .get(function () {
-        if(!this.pot) return {};
+
+        if (!this.pot) return [];
         if (!this.pot.round.bets) return [];
         const bets = {};
         for (const bet of this.pot.round.bets) {
@@ -193,51 +146,34 @@ modelSchema.virtual('turnSite')
 modelSchema.virtual('ftrCards')
     .get(function () {
         if (!this.pot) return [];
-        let cards = [];
-        for(const round of this.pot.rounds){
-            cards = cards.concat(round.cards)
-        }
-        return cards;
+        return this.pot.lastRound.cards;
     });
 
 modelSchema.virtual('isMyTurn')
     .get(function () {
-        if(!this.pot) return false;
+        if (!this.pot) return false;
         return this.playerSite && this.playerSite.equals(this.pot.round.turn);
     });
 
 
-potSchema.virtual('sum')
+modelSchema.virtual('bank')
     .get(function () {
         let sum = 0;
-        for (const bet of this.bets) {
-
-            sum += bet.value;
+        for (const pot of this.pots) {
+            sum += pot.sum;
         }
         return sum;
     });
 
-potSchema.virtual('bets')
-    .get(function () {
-        let bets = [];
-        for (const round of this.rounds) {
-            bets = bets.concat(round.bets)
-        }
-
-        return bets;
-    });
-
-
-
 modelSchema.virtual('potPrev')
     .get(function () {
-        const closed =this.pots.filter(p=>p.closed);
+        const closed = this.pots.filter(p => p.closed);
         return closed[closed.length - 1];
     });
 
 modelSchema.virtual('pot')
     .get(function () {
-        return this.potsOpen[this.potsOpen.length-1];
+        return this.potsOpen[this.potsOpen.length - 1];
     });
 
 modelSchema.virtual('potsOpen')
@@ -252,7 +188,7 @@ potSchema.virtual('round')
 
 modelSchema.virtual('nextTurn')
     .get(function () {
-        if(!this.pot) return;
+        if (!this.pot) return;
         let idx = this.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
         if (idx === this.sitesOfPot.length) idx = 0;
         return this.sitesOfPot[idx];
@@ -286,7 +222,7 @@ modelSchema.virtual('sitesActive')
 
 modelSchema.virtual('lastBet')
     .get(function () {
-        if(!this.pot) return;
+        if (!this.pot) return;
         if (!this.pot.round || !this.pot.round.bets) return null;
         return this.pot.round.bets[this.pot.round.bets.length - 1];
     });

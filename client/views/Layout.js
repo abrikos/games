@@ -39,10 +39,7 @@ export default function Layout(props) {
 
 
     useEffect(() => {
-        props.checkAuth()
-            .then(res => {
-                loadBalance();
-            })
+        loadBalance();
 
     }, []);
 

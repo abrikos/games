@@ -58,15 +58,20 @@ module.exports.controller = function (app) {
                     addReferral(parent, req);
                 })
         }*/
-        res.redirect(req.query.returnUrl)
+        res.redirect(req.cookies.returnUrl || req.query.returnUrl)
     });
 
     app.post('/api/login/test', passport.authenticate('test'), (req, res) => {
         res.send({ok: 200})
     });
 
+    app.get('/api/not-logged', (req, res) => {
+        res.cookie('returnUrl',req.headers.referer, { maxAge: 900000, httpOnly: true });
+        res.redirect('/login')
+    });
 
-    app.post('/api/isAuth', passportLib.isLogged, async (req, res) => {
+
+    app.post('/api/user/authenticated', passportLib.isLogged, async (req, res) => {
         Mongoose.User.findById(req.session.userId)
             .then(user => res.send(user))
             .catch(error => {
