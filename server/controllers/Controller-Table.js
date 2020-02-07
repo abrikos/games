@@ -39,6 +39,7 @@ module.exports.controller = function (app) {
     app.post('/api/table/list/:game', async (req, res) => {
         const game = req.params.game;
         Mongoose.Table.find({game, active: true})
+            .sort({createdAt:-1})
             .then(list => res.send(list))
     });
 

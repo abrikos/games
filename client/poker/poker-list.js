@@ -11,6 +11,7 @@ export default function PokerList(props) {
     const [tables, setTables] = useState([]);
 
     const [message, setMessage] = useState({});
+    const [tableUpdated, setTableUpdated] = useState(false);
 
     useEffect((x) => {
         console.log('Message')
@@ -18,8 +19,8 @@ export default function PokerList(props) {
         console.log(props.message.player , props.authenticatedUser)
         if (props.message.action === 'create' && props.message.player === props.authenticatedUser._id) navigate('/poker/' + props.message.id);
         reloadTables();
-        setMessage(props.message);
-        setInterval(() => setMessage({}), 2000)
+        setTableUpdated(props.message.id);
+        setTimeout(() => setTableUpdated(null), 2000)
         return () => {
             console.log('will unmount', x);
         }
@@ -44,11 +45,10 @@ export default function PokerList(props) {
     }
 
     function isTableUpdated(t) {
-        return message.id === t.id
+        return tableUpdated === t.id
     }
 
     function table(rows) {
-        console.log(rows);
         return <table className="table-bordered tables-list">
             <thead>
             <tr>
