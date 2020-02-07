@@ -46,7 +46,7 @@ export default class Poker {
     async leave(id, userId) {
         const record = await this.getRecord(id);
         const site = record.siteOfPlayer(userId);
-        site.cards = null;
+        site.data.cards = null;
         site.player = null;
         site.stake = 0;
         if (record.table.sitesActive.length === 1) {
@@ -110,7 +110,7 @@ export default class Poker {
 
     async onJoin(record) {
         if(record.table.playersCount===2){
-            this._newPot(record);
+            this._startGame(record);
         }
         //this._websocketSend('join', record, player._id);
         await record.save();
@@ -118,7 +118,7 @@ export default class Poker {
     }
 
 
-    _newPot(record) {
+    _startGame(record) {
         //if (record.pot) return;
         const round = {turn: record.table.sitesActive[0], type: this._roundTypes[0].name};
         record.pots.push({
@@ -130,14 +130,15 @@ export default class Poker {
         //logger.info(record.table.sitesActive)
 
         for (const siteId of record.pot.sites) {
+            logger.info(siteId)
             const site = record.table.sites.find(s=>s.equals(siteId));
             const c1 = record.pot.deck.pop();
             const c2 = record.pot.deck.pop();
-            site.cards = [c1, c2]
+            site.data.cards = [c1, c2]
         }
         logger.info(record.pot.sites)
-        const site0 = record.table.sites.id(record.pot.sites[0].siteId);
-        const site1 = record.table.sites.id(record.pot.sites[1].siteId);
+        const site0 = record.table.sites.id(record.pot.sites[0]);
+        const site1 = record.table.sites.id(record.pot.sites[1]);
 
         site0.blind = 1;
         site1.blind = 2;
@@ -167,12 +168,12 @@ export default class Poker {
             if(site.stake === value){
                 //All in
                 record.pots.push(record.pot);
-                record.pot.sites = record.pot.sites.filter(s => !site.equals(s.siteId));
+                record.pot.sites = record.pot.sites.filter(s => !site.equals(s));
             }
         } else {
             //FOLD
             record.pot.round.turn = record.nextTurn;
-            record.pot.sites = record.pot.sites.filter(s => !site.equals(s.siteId));
+            record.pot.sites = record.pot.sites.filter(s => !site.equals(s));
         }
         this._checkNextRound(record);
         await record.save();
@@ -204,7 +205,7 @@ export default class Poker {
             this._endGame(record)
         } else {
             logger.info('NEW ROUND', newRoundType.name);
-            record.pot.rounds.push({turn: record.pot.sites[0].siteId, type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
+            record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
         }
 
     }
@@ -217,13 +218,13 @@ export default class Poker {
         const table = record.pot.rounds[record.pot.rounds.length - 1].cards;
         for (const pot of record.potsOpen) {
             for (const s of pot.sites) {
-                const site = record.table.sites.find(s2=>s2.equals(s.siteId));
+                const site = record.table.sites.find(s2=>s2.equals(s));
                 //logger.info(site)
-                site.result = _combination(site.cards, table)
+                site.result = _combination(site.data.cards, table)
 
             }
 
-            const winners = this._winners(pot.sites.map(s=>record.table.sites.id(s.siteId)));
+            const winners = this._winners(pot.sites.map(s=>record.table.sites.id(s)));
             for (const site of winners) {
                 site.stake += pot.sum / winners.length;
             }

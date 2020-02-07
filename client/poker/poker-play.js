@@ -20,7 +20,8 @@ export default function PokerPlay(props) {
     }
 
     useEffect(() => {
-        if (props.message && game && props.message.id !== game.id) return;
+        console.log(props.message)
+        if (props.message && game && props.message.id !== game.table.id) return;
         loadTable();
     }, [props.message]);
 

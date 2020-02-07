@@ -74,7 +74,6 @@ module.exports.controller = function (app) {
 
     function websocketSend(action, id, game, player) {
         app.locals.wss.clients.forEach(function each(client) {
-            logger.info(client)
             client.send(JSON.stringify({action, id, game, timestamp: new Date(), player}));
         });
     }

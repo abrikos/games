@@ -1,7 +1,6 @@
 import moment from "moment";
 //import siteSchema from "./Schema-Site";
 import potSchema from "./Schema-Pot";
-import Poker from "server/games/Poker";
 
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
@@ -13,6 +12,13 @@ const OPTIONS = [
     {name: "maxPlayers", type: "select", options: [2, 3, 4, 5], label: "Max players", default: 3},
     {name: "waitPlayer", type: "range", min: 30, max: 120, label: "Seconds to wait players turn", default: 45}
 ];
+
+const DATA = {
+    cards: [],
+    blind: 0,
+    combination: '',
+    fold: false,
+}
 
 const modelSchema = new Schema({
         //name: {type: String, required: [true, 'Name required']},
@@ -87,12 +93,23 @@ modelSchema.virtual('defaultOptions')
         return OPTIONS
     });
 
+modelSchema.virtual('gameData')
+    .get(function () {
+        return DATA
+    });
+
 modelSchema.statics.defaultOptions = OPTIONS;
 
 modelSchema.virtual('sitesOfPot')
     .get(function () {
         if (!this.pot) return [];
         return this.pot.sites;
+    });
+
+modelSchema.virtual('sitesCanBet')
+    .get(function () {
+        if (!this.pot) return [];
+        return this.table.sites.filter(s=>!s.data.fold);
     });
 
 
@@ -186,9 +203,9 @@ modelSchema.virtual('potLast')
 modelSchema.virtual('nextTurn')
     .get(function () {
         if (!this.pot) return;
-        let idx = this.table.sitesOfPot.map(s => s.siteId.toString()).indexOf(this.pot.round.turn.toString()) + 1;
+        let idx = this.table.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
         if (idx === this.table.sitesOfPot.length) idx = 0;
-        return this.table.sitesOfPot[idx].siteId;
+        return this.table.sitesOfPot[idx];
     });
 
 /*

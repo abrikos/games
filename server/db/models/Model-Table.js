@@ -14,7 +14,7 @@ const siteSchema = new Schema({
     stake: {type: Number, default: 0},
     position: {type: Number, default: 0},
     result: Object,
-    data: Object
+    data: {type: Object, default:{}},
 }, {
     toObject: {virtuals: true},
     toJSON: {virtuals: true}

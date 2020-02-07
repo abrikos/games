@@ -12,7 +12,7 @@ const siteSchema = new Schema({
 })
 
 const potSchema = new Schema({
-    sitesProto: [siteSchema],
+    sites: [mongoose.Schema.Types.ObjectId],
     rounds: [roundSchema],
 
     deck: [cardSchema],
@@ -23,16 +23,6 @@ const potSchema = new Schema({
     toJSON: {virtuals: true}
 });
 
-potSchema.virtual('sites')
-    .set(function (sites) {
-        this.sitesProto = []
-        for(const site of sites){
-            this.sitesProto.push({siteId:site._id});
-        };
-    })
-    .get(function () {
-        return this.sitesProto;
-    });
 
 potSchema.virtual('sum')
     .get(function () {
