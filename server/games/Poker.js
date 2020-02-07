@@ -9,16 +9,6 @@ export default class Poker {
         return {suits: ['S', 'C', 'D', 'H'], values: ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']};
     }
 
-    get options() {
-        return [
-            //{name: "defaultBet", type: "number", step:0.01, label: "Default bet", default:100},
-            {name: "blind", type: "select", options: [{label: '1/2', value: 1}, {label: '5/10', value: 5}, {label: '10/20', value: 10}, {label: '100/200', value: 100},], label: "Blinds", default: 5},
-            {name: "dices", type: "select", options: [2, 3, 4, 5], label: "Count of dices", default: 2},
-            {name: "maxPlayers", type: "select", options: [2, 3, 4, 5], label: "Max players", default: 3},
-            {name: "waitPlayer", type: "range", min: 30, max: 120, label: "Seconds to wait players turn", default: 45}
-        ];
-    }
-
     get _roundTypes() {
         return [{name: 'pre', cards: 0}, {name: 'flop', cards: 3}, {name: 'turn', cards: 1}, {name: 'river', cards: 1}];
     }
@@ -59,16 +49,16 @@ export default class Poker {
         site.cards = null;
         site.player = null;
         site.stake = 0;
-        if (record.sitesActive.length === 1) {
-            const player = record.sitesActive[0].player;
+        if (record.table.sitesActive.length === 1) {
+            const player = record.table.sitesActive[0].player;
             const bet = record.betOfPlayer(player._id);
             if (bet) {
                 player.addBalance(bet.value);
             }
             record.pots = [];
-            //leave(record, record.sitesActive[0].player._id);
+            //leave(record, record.table.sitesActive[0].player._id);
         }
-        if (record.sitesActive.length === 0) {
+        if (record.table.sitesActive.length === 0) {
             record.active = false;
         }
         await record.save();
@@ -76,58 +66,53 @@ export default class Poker {
         return record;
     }
 
-    async create(postBody, userId) {
-        const record = new Mongoose.Poker();
-        const words = rword.generate(2, {length: '3-4'}).join(' ');
-        record.name = words.replace(/^./, words[0].toUpperCase());
+
+
+    /*async create(table, postBody, player) {
+        const record = new Mongoose.poker({table});
+        //const words = rword.generate(2, {length: '3-4'}).join(' ');
+        /!*record.name = words.replace(/^./, words[0].toUpperCase());
         record.options = {};
         for (const option of this.options) {
             const value = postBody[option.name] || option.default;
             record.options[option.name] = value;
-        }
+        }*!/
 
-        const player = await Mongoose.User.findById(userId);
+        /!*const player = await Mongoose.User.findById(userId);
         for (let position = 0; position < record.maxPlayers; position++) {
             //const player = position ? null : user;
-            record.sites.push({position})
-        }
-        record.realMode = player.realMode;
-
-        await record.populate(Mongoose.Poker.population).execPopulate();
+            record.table.sites.push({position})
+        }*!/
+        //await record.populate(Mongoose.poker.population).execPopulate();
         this._takeSite({player, record});
         await record.save();
-        this._websocketSend('create', record, userId);
+        //this._websocketSend('create', record, player.id);
         return record;
-    }
+    }*/
 
     _takeSite({player, record, siteId}) {
-        if (!record.sites.find(s => !s.player)) return logger.warn('No sites available');
+        if (!record.table.sites.find(s => !s.player)) return logger.warn('No sites available');
         const stake = record.options.blind * 100;
-        let site = record.sites.find(s => s.equals(siteId));
+        let site = record.table.sites.find(s => s.equals(siteId));
         if (!site) {
-            site = record.sites.find(s => !s.player);
+            site = record.table.sites.find(s => !s.player);
         }
         site.player = player;
         site.stake = stake;
         player.addBalance(-stake);
-        if (record.sitesActive.length === 2) {
+        if (record.table.sitesActive.length === 2) {
             //this._startPot(record);
             //await this._startGame();
-            //this.logicNextTurn(this.sitesActive[0]);
+            //this.logicNextTurn(this.table.sitesActive[0]);
         }
         return site;
     }
 
-    async join(id, userId, siteId) {
-        const record = await this.getRecord(id);
-        const player = await Mongoose.User.findById(userId);
-        if (record.siteOfPlayer(player)) return record;
-        if (!record.canJoin) return record;
-        this._takeSite({player, record, siteId});
-        if(record.playersCount===2){
+    async onJoin(record) {
+        if(record.table.playersCount===2){
             this._newPot(record);
         }
-        this._websocketSend('join', record, player._id);
+        //this._websocketSend('join', record, player._id);
         await record.save();
         return record;
     }
@@ -135,24 +120,24 @@ export default class Poker {
 
     _newPot(record) {
         //if (record.pot) return;
-        const round = {turn: record.sitesActive[0], type: this._roundTypes[0].name};
+        const round = {turn: record.table.sitesActive[0], type: this._roundTypes[0].name};
         record.pots.push({
             deck: this._deck,
             bets: [],
-            sites: record.sitesActive,
+            sites: record.table.sitesActive,
             rounds: [round]
         });
-        //logger.info(record.sitesActive)
+        //logger.info(record.table.sitesActive)
 
         for (const siteId of record.pot.sites) {
-            const site = record.sites.id(siteId);
+            const site = record.table.sites.find(s=>s.equals(siteId));
             const c1 = record.pot.deck.pop();
             const c2 = record.pot.deck.pop();
             site.cards = [c1, c2]
         }
-
-        const site0 = record.sites.id(record.pot.sites[0]);
-        const site1 = record.sites.id(record.pot.sites[1]);
+        logger.info(record.pot.sites)
+        const site0 = record.table.sites.id(record.pot.sites[0].siteId);
+        const site1 = record.table.sites.id(record.pot.sites[1].siteId);
 
         site0.blind = 1;
         site1.blind = 2;
@@ -182,12 +167,12 @@ export default class Poker {
             if(site.stake === value){
                 //All in
                 record.pots.push(record.pot);
-                record.pot.sites = record.pot.sites.filter(s => !s.equals(site._id));
+                record.pot.sites = record.pot.sites.filter(s => !site.equals(s.siteId));
             }
         } else {
             //FOLD
             record.pot.round.turn = record.nextTurn;
-            record.pot.sites = record.pot.sites.filter(s => !s.equals(site._id));
+            record.pot.sites = record.pot.sites.filter(s => !site.equals(s.siteId));
         }
         this._checkNextRound(record);
         await record.save();
@@ -199,7 +184,7 @@ export default class Poker {
     _checkNextRound(record) {
         const values = record.sitesBetSum.map(b => b.sum);
         const lastBet = record.lastBet;
-        const lastSite = record.sites.id(lastBet.site);
+        const lastSite = record.table.sites.id(lastBet.site);
         const min = Math.min(...values);
         const max = Math.max(...values);
         const pre = record.pot.round.type === 'pre' ? 2:0;
@@ -219,7 +204,7 @@ export default class Poker {
             this._endGame(record)
         } else {
             logger.info('NEW ROUND', newRoundType.name);
-            record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
+            record.pot.rounds.push({turn: record.pot.sites[0].siteId, type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
         }
 
     }
@@ -232,13 +217,13 @@ export default class Poker {
         const table = record.pot.rounds[record.pot.rounds.length - 1].cards;
         for (const pot of record.potsOpen) {
             for (const s of pot.sites) {
-                const site = record.sites.id(s);
+                const site = record.table.sites.find(s2=>s2.equals(s.siteId));
                 //logger.info(site)
                 site.result = _combination(site.cards, table)
 
             }
 
-            const winners = this._winners(pot.sites.map(s=>record.sites.id(s)));
+            const winners = this._winners(pot.sites.map(s=>record.table.sites.id(s.siteId)));
             for (const site of winners) {
                 site.stake += pot.sum / winners.length;
             }
@@ -281,9 +266,9 @@ export default class Poker {
     }
 
     async getRecord(id) {
-        return await Mongoose.Poker.findById(id).populate(Mongoose.Poker.population);
+        return await Mongoose.poker.findOne({table:id}).populate(Mongoose.poker.population);
         /*const promise = new Promise((resolve, reject) => {
-            Mongoose.Poker.findById(id).populate(Mongoose.Poker.population)
+            Mongoose.poker.findById(id).populate(Mongoose.poker.population)
                 .then(resolve).catch(reject)
         });
         const record = await promise;
@@ -293,7 +278,7 @@ export default class Poker {
 
     _websocketSend(action, record, player) {
         this.app.locals.wss.clients.forEach(function each(client) {
-            client.send(JSON.stringify({action, id: record.id, game: 'poker', timestamp: new Date(), player: player}));
+            client.send(JSON.stringify({action, id: record.table.id, game: 'poker', timestamp: new Date(), player: player}));
         });
     }
 };

@@ -5,27 +5,29 @@ import UserAvatar from "client/components/UserAvatar";
 import PlayCard from "client/components/PlayCard";
 
 export default function PokerTable(props) {
-    const table = props.table;
+    const game = props.game;
 
     function joinTable(id) {
-        props.api(`/poker/${table.id}/join/site/${id}`)
+        props.api(`/table/${game.table.id}/join/site/${id}`)
     }
 
     function Site(props) {
         const index = arrangeSites(props.index);
-        const site = table.sites[index];
-        const bets = table.sitesBetSum.find(s=>s.site===site._id);
+
+        const site = game.table.sites[index];
+        const bets = game.sitesBetSum.find(s=>s.site===site._id);
         //return <div>{props.index} - {index} - {site.position}</div>
         return <div>
             {site.player ? <div>
 
                     Bet: {bets ? bets.sum: 0}
                     {props.index===0 && site.result && site.result.name}
+
                     <UserAvatar user={site.player} size={'sm'}/>
-                    {site.cards.map((c,i)=><PlayCard key={i} {...c}/>)}
+                    {game.pot && game.pot.sites.find(s=>s.siteId===site._id).cards.map((c,i)=><PlayCard key={i} {...c}/>)}
                 </div>
                 :
-                table.playerSite ?
+                game.playerSite ?
                     'Empty'
                     :
                     <Button onClick={() => joinTable(site._id)} color="success">{t('Sit here')}</Button>
@@ -35,16 +37,16 @@ export default function PokerTable(props) {
 
     function arrangeSites(index) {
         let newIndex = index;
-        if (table.playerSite) {
-            newIndex = index +  table.playerSite.position;
-            if(newIndex>=table.sites.length) newIndex -=table.sites.length;
+        if (game.playerSite) {
+            newIndex = index +  game.playerSite.position;
+            if(newIndex>=game.table.sites.length) newIndex -=game.table.sites.length;
         }
         return newIndex;
 
     }
 
     const middleSitesIdx = [];
-    for(let i = 2; i < table.sites.length - 1; i++){
+    for(let i = 2; i < game.table.sites.length - 1; i++){
         middleSitesIdx.push(i)
     }
     return <table>
@@ -57,9 +59,9 @@ export default function PokerTable(props) {
         <tr>
             <td><Site index={1}/></td>
             <td style={{width:600, height:200}} className="text-center">
-                {table.ftrCards.map((c, i) => <PlayCard key={i} {...c}/>)}
+                {game.ftrCards.map((c, i) => <PlayCard key={i} {...c}/>)}
             </td>
-            <td><Site index={table.sites.length - 1}/></td>
+            <td><Site index={game.table.sites.length - 1}/></td>
         </tr>
         <tr>
             <td></td>

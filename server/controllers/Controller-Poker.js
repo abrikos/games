@@ -15,7 +15,7 @@ module.exports.controller = async function (app) {
     const u4 = "5dff2858ed5d7264b1713510";
 
     if (0) {
-        //await Mongoose.Poker.deleteMany();
+        //await Mongoose.poker.deleteMany();
 
         let record = await Poker.create({}, u1);
         console.log('Table created')
@@ -47,7 +47,7 @@ module.exports.controller = async function (app) {
 
 
     app.post('/api/poker/options', passportLib.isLogged, (req, res) => {
-        res.send(Poker.options)
+        res.send(Mongoose.poker.defaultOptions)
     });
 
 
@@ -80,13 +80,13 @@ module.exports.controller = async function (app) {
 
     //Mongoose.Bet.find({round:"5df78d95d2c18502cd14af8b"}).sort({createdAt:-1}).then(console.log)
     //Mongoose.Round.findById("5df78d95d2c18502cd14af8b").populate('bets').then(console.log)
-    //Mongoose.Poker.findOne().sort({createdAt:-1}).populate(Mongoose.Poker.population).then(t=>console.log(t.playerBet));
-    //Mongoose.Poker.deleteMany({}).then(console.log)
+    //Mongoose.poker.findOne().sort({createdAt:-1}).populate(Mongoose.poker.population).then(t=>console.log(t.playerBet));
+    //Mongoose.poker.deleteMany({}).then(console.log)
 
     app.post('/api/poker/list/active', (req, res) => {
         //Mongoose.User.findById(req.session.userId);
-        Mongoose.Poker.find({active: true})
-            //.populate(Mongoose.Poker.population)
+        Mongoose.poker.find({active: true})
+            //.populate(Mongoose.poker.population)
             .sort({updatedAt: -1})
             .then(pokers => {
                 res.send(pokers.map(p => {
@@ -148,11 +148,15 @@ module.exports.controller = async function (app) {
 
 
     app.post('/api/poker/:id', passportLib.isLogged, async (req, res) => {
-        Poker.getRecord(req.params.id)
-            .then(poker => {
-                poker.playerSite = poker.siteOfPlayer(req.session.userId);
-                if (poker.pot) poker.pot.deck = [];
-                res.send(poker)
+
+        Mongoose.poker.findOne({table:req.params.id, active: true})
+            .populate(Mongoose.poker.population)
+            .then(record => {
+                if(!record) return res.send({error: 500, message: 'No active game'})
+                if(!record.table) return res.send({error: 500, message: 'Wrong game table'})
+                record.playerSite = record.table.siteOfPlayer(req.session.userId);
+                //if (poker.pot) poker.pot.deck = [];
+                res.send(record)
             })
         //.catch(e => res.send({error: 500, message: e.message}))
     });

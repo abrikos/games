@@ -12,7 +12,7 @@ import StakeManage from "client/poker/StakeManage";
 import PokerTable from "client/poker/poker-table";
 
 export default function PokerPlay(props) {
-    const [table, setTable] = useState();
+    const [game, setGame] = useState();
 
     function emojiPoker(i) {
         const Pokers = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
@@ -20,7 +20,7 @@ export default function PokerPlay(props) {
     }
 
     useEffect(() => {
-        if (props.message && table && props.message.id !== table.id) return;
+        if (props.message && game && props.message.id !== game.id) return;
         loadTable();
     }, [props.message]);
 
@@ -30,21 +30,21 @@ export default function PokerPlay(props) {
         props.apiAuth('/poker/' + props.id)
             .then(res => {
                 //if (!res) return navigate('/games');
-                setTable(res)
+                setGame(res)
             })
     }
 
 
-    if (!table) return <Loader/>;
+    if (!game) return <Loader/>;
 
     return <div>
-        <MyBreadCrumb items={[{href: '/poker', label: t('Poker')}, {label: table.name}]}/>
+        <MyBreadCrumb items={[{href: '/poker', label: t('Poker')}, {label: game.table.name}]}/>
 
         <div className="Poker-table p-4">
 
-            {table.playerSite && <div className="row">
+            {game.playerSite && <div className="row">
                 <div className="col-8">
-                    <h2><img src={pokerChip} alt={"poker chip"} className="poker-chip"/> Bank: {table.bank}</h2>
+                    <h2><img src={pokerChip} alt={"poker chip"} className="poker-chip"/> Bank: {game.bank}</h2>
                 </div>
 
             </div>}
@@ -52,22 +52,22 @@ export default function PokerPlay(props) {
             <hr/>
             <div className="row">
                 <div className="col-8">
-                    <PokerTable table={table} {...props}/>
-                    {table.isMyTurn && <PokerBet table={table} {...props}/>}
+                    <PokerTable game={game} {...props}/>
+                    {game.isMyTurn && <PokerBet game={game} {...props}/>}
                 </div>
                 <div className="col">
-                    {!table.active && <h4>{t('Game finished')}</h4>}
-                    {table.active && table.playerSite && <div className="col-4 bet-control text-center">
-                        <h4>{table.playerSite.stake}</h4>
+                    {!game.active && <h4>{t('Game finished')}</h4>}
+                    {game.active && game.playerSite && <div className="col-4 bet-control text-center">
+                        <h4>{game.playerSite.stake}</h4>
                         <div>
-                            {table.playerSite && <div>
-                                {!!table.mySumBets && <div className="current-bet">Bet: {table.mySumBets}</div>}
-                                <A href={`/poker/${table.id}/leave`} className="btn btn-warning text-right">{t('Leave')}</A>
+                            {game.playerSite && <div>
+                                {!!game.mySumBets && <div className="current-bet">Bet: {game.mySumBets}</div>}
+                                <A href={`/poker/${game.id}/leave`} className="btn btn-warning text-right">{t('Leave')}</A>
                             </div>}
 
                         </div>
 
-                        <StakeManage table={table} {...props}/>
+                        <StakeManage table={game.table} {...props}/>
                     </div>}
                 </div>
             </div>

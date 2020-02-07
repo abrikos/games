@@ -63,10 +63,22 @@ server.on('upgrade', function(request, socket, head) {
         });
     });
 });
+/*
+wss.on('connection', function connection(ws, request) {
+    //console.log('CONNECTED');
+    ws.on('message', function incoming(received) {
+        let data;
+        try{
+            data = JSON.parse(received);
+        }catch (e) {
+            return ws.send(JSON.stringify({error: e.error}));
+        }
+        //data.xxx= new Date();
+        ws.send(JSON.stringify(data))
+    });
+});*/
 
 bot();
-websocket(wss);
-
 //
 // Start the server.
 //

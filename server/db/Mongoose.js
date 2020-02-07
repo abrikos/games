@@ -3,7 +3,8 @@ import Referral from "server/db/models/Model-Referral";
 import Message from "server/db/models/Model-Message";
 import Filler from "server/db/models/Model-Filler";
 import Log from "server/db/models/Model-Log";
-import Poker from "server/db/models/Model-Poker";
+import poker from "server/db/models/Model-Poker";
+import Table from "server/db/models/Model-Table";
 
 const mongoose = require("mongoose");
 mongoose.set('useCreateIndex', true);
@@ -24,7 +25,7 @@ const Mongoose = {
         if (!cookie.length) return false;
         return cookie.indexOf(model.cookieId) !== -1;
     },
-    User, Referral, Message, Filler, Log, Poker
+    User, Referral, Message, Filler, Log, poker, Table
 
 };
 export default Mongoose;

@@ -3,9 +3,16 @@ import cardSchema from "./Schema-Card";
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+const siteSchema = new Schema({
+    siteId: mongoose.Schema.Types.ObjectId,
+    cards: [cardSchema],
+    blind: Number,
+    combination: String,
+    fold: Boolean,
+})
 
 const potSchema = new Schema({
-    sites: [mongoose.Schema.Types.ObjectId],
+    sitesProto: [siteSchema],
     rounds: [roundSchema],
 
     deck: [cardSchema],
@@ -15,6 +22,17 @@ const potSchema = new Schema({
     toObject: {virtuals: true},
     toJSON: {virtuals: true}
 });
+
+potSchema.virtual('sites')
+    .set(function (sites) {
+        this.sitesProto = []
+        for(const site of sites){
+            this.sitesProto.push({siteId:site._id});
+        };
+    })
+    .get(function () {
+        return this.sitesProto;
+    });
 
 potSchema.virtual('sum')
     .get(function () {

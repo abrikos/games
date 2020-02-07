@@ -144,7 +144,6 @@
     "start": "NODE_PATH=. node scripts/start.js",
     "server": "NODE_PATH=. nodemon -r esm server/websocket-server.js",
     "admin": "node scripts/start-admin.js",
-    "websocket": "node server/lib/websocket.js",
     "build": "GENERATE_SOURCEMAP=false NODE_PATH=. node scripts/build.js",
     "buildadmin": "node scripts/build-admin.js",
     "webpack": "NODE_ENV=production webpack-cli --config config/webpack.config.prod.js",

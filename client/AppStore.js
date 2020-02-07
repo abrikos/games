@@ -40,9 +40,9 @@ export default function App() {
         if (!websocket || websocket.readyState === 3) startWebSocket();
     }
 
-    function getUser(){
-        API.postData('/user/authenticated')
-            .then(setAuthUser);
+    async function getUser(){
+        const user = await API.postData('/user/authenticated')
+        setAuthUser(user);
     }
 
     useEffect(() => {
@@ -95,12 +95,15 @@ export default function App() {
             return new Promise((resolve,reject)=>{
                 this.api(path, data)
                     .then(res=>{
-                        setAuthUser(true)
-                        return resolve(res)
+                        getUser()
+                            .then(()=>resolve(res));
+
                     })
                     .catch(err=>{
-                        console.log(err)
-                        if(err.response.status===401) return document.location.href = '/api/not-logged';
+                        console.log(path, err)
+                        if(err.response && err.response.status===401) return document.location.href = '/api/not-logged';
+                        err.message += ': ' + path
+                        this.setAlert(err);
                     })
             })
         },
