@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const siteSchema = new Schema({
-    siteId: mongoose.Schema.Types.ObjectId,
+    tableSite: mongoose.Schema.Types.ObjectId,
     cards: [cardSchema],
     blind: Number,
     combination: String,
@@ -12,7 +12,7 @@ const siteSchema = new Schema({
 })
 
 const potSchema = new Schema({
-    sites: [mongoose.Schema.Types.ObjectId],
+    sites: [siteSchema],
     rounds: [roundSchema],
 
     deck: [cardSchema],

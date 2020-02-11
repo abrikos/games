@@ -143,7 +143,8 @@ modelSchema.virtual('maxBet')
         if (!this.pot) return 0;
         if (!this.pot.round.bets) return 0;
         let max = 0;
-        for (const site of this.table.sitesBetSum) {
+
+        for (const site of this.sitesBetSum) {
             if (site.sum > max) max = site.sum;
         }
         return max;
@@ -152,7 +153,9 @@ modelSchema.virtual('maxBet')
 
 modelSchema.virtual('turnSite')
     .get(function () {
-        if (!this.pot) return this.table.sitesActive[0]._id;
+
+        if (!this.pot) return this.table.sitesActive[0];
+        logger.info('WWWWWWWWWWWWWWW', this.pot.round.turn)
         return this.table.sites.id(this.pot.round.turn);
     });
 
@@ -202,10 +205,12 @@ modelSchema.virtual('potLast')
 
 modelSchema.virtual('nextTurn')
     .get(function () {
+
         if (!this.pot) return;
-        let idx = this.table.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
-        if (idx === this.table.sitesOfPot.length) idx = 0;
-        return this.table.sitesOfPot[idx];
+        let idx = this.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
+        if (idx === this.sitesOfPot.length) idx = 0;
+        logger.info(this.table.sites.map(s=>s.id), this.sitesOfPot[idx].tableSite)
+        return this.sitesOfPot[idx].tableSite;
     });
 
 /*

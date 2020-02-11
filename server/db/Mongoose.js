@@ -13,7 +13,9 @@ mongoose.connect("mongodb://localhost:27017/games", {useNewUrlParser: true, useU
 //mongoose.connect("mongodb://108.160.143.119:27017/minterEarth", {useNewUrlParser: true});
 
 const Mongoose = {
-
+    close:function (cb){
+        mongoose.disconnect(cb)
+    },
     Types: mongoose.Types,
     connection: mongoose.connection,
     checkOwnPassport: function (model, passport) {

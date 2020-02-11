@@ -1,1 +1,1 @@
-export {default as poker} from "./Poker";
+export {default as poker} from "server/games/poker/Poker";

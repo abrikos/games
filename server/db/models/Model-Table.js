@@ -1,5 +1,5 @@
 import moment from "moment";
-import Poker from "server/games/Poker";
+import Poker from "server/games/poker/Poker";
 //import siteSchema from "./Schema-Site";
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
@@ -14,7 +14,6 @@ const siteSchema = new Schema({
     stake: {type: Number, default: 0},
     position: {type: Number, default: 0},
     result: Object,
-    data: {type: Object, default:{}},
 }, {
     toObject: {virtuals: true},
     toJSON: {virtuals: true}
@@ -41,6 +40,7 @@ modelSchema.statics.population = ['sites.player'];
 
 modelSchema.methods.siteOfPlayer = function (player) {
     const site = this.sites.find(s => s.player && s.player.equals(player));
+
     if (this.potLast)
         site.result = Poker.combination(site.cards, this.potLast.round.cards)
     return site;
@@ -69,6 +69,7 @@ modelSchema.virtual('playersCount')
     });
 
 
+
 modelSchema.methods.takeSite = function ({player, siteId, stake}) {
     if (!this.sites.find(s => !s.player)) return logger.warn('No sites available');
     //const stake = record.options.blind * 100;
@@ -77,6 +78,7 @@ modelSchema.methods.takeSite = function ({player, siteId, stake}) {
         site = this.sites.find(s => !s.player);
     }
     site.player = player;
+    site.stake = stake;
     player.addBalance(-stake);
 };
 
@@ -91,11 +93,14 @@ modelSchema.virtual('date')
         return moment(this.createdAt).format('YYYY-MM-DD HH:mm:ss')
     });
 
-modelSchema.virtual('pokers', {
+
+
+modelSchema.virtual('poker', {
     ref: 'Poker',
+    match:()=>{return {active:true}},
     localField: '_id',
     foreignField: 'table',
-    justOne: false // set true for one-to-one relationship
+    justOne: true // set true for one-to-one relationship
 });
 
 

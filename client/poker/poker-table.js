@@ -24,7 +24,7 @@ export default function PokerTable(props) {
                     {props.index===0 && site.result && site.result.name}
 
                     <UserAvatar user={site.player} size={'sm'}/>
-                    {game.pot && game.pot.sites.find(s=>s.siteId===site._id).cards.map((c,i)=><PlayCard key={i} {...c}/>)}
+                    {game.pot && game.pot.sites.find(s=>s.tableSite===site._id).cards.map((c,i)=><PlayCard key={i} {...c}/>)}
                 </div>
                 :
                 game.playerSite ?
@@ -49,6 +49,8 @@ export default function PokerTable(props) {
     for(let i = 2; i < game.table.sites.length - 1; i++){
         middleSitesIdx.push(i)
     }
+
+    console.log(game.pot)
     return <table>
         <tbody>
         <tr>
