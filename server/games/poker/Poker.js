@@ -179,8 +179,9 @@ export default class Poker {
             //FOLD
             record.pot.sites = record.pot.sites.filter(s => !site.equals(s));
         }
-        record.pot.round.turn = record.nextTurn;
+
         this._checkNextRound(record);
+        record.pot.round.turn = record.nextTurn;
         await record.save();
         return 'OK';
 
@@ -214,6 +215,10 @@ export default class Poker {
         } else {
             logger.info('NEW ROUND', newRoundType.name);
             record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
+            for(const site of record.pot.sites){
+                site.combination = Combination.calc(site.cards, record.pot.round.cards).name
+                //logger.info(record.cardsOfPlayer(site.player))
+            }
         }
 
     }

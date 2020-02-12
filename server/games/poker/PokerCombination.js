@@ -1,11 +1,11 @@
 export default {
 
-    _combinationSum: (combination) => {
+    _combinationSum: function(combination) {
         return combination.map(c => 2 ** c.idx).reduce((a, b) => a + b)
     },
 
 
-    calc: (hand, table) => {
+    calc: function(hand, table) {
         const sorted = hand.concat(table).sort((a, b) => b.idx - a.idx);
         const flush = this._getFlush(sorted);
         if (flush && flush.straight) return flush;
@@ -23,12 +23,12 @@ export default {
         return this._getHighCard(sorted);
     },
 
-    _getHighCard: (source) => {
+    _getHighCard: function(source)  {
         const combination = source.splice(0, 5);
         return {combination, sum: this._combinationSum(combination), name: "High card", priority: 1}
     },
 
-    _getDouble: (sorted) => {
+    _getDouble: function(sorted) {
         const combination = [];
         for (const s of sorted) {
             if (combination.length === 4) break;
@@ -41,7 +41,7 @@ export default {
     },
 
 
-    _getByValues: (count, source) => {
+    _getByValues: function(count, source)  {
         const names = {4: "Care", 3: "Set", 2: "Pair"};
         const sorted = Object.assign([], source);
         let obj = {};
@@ -60,7 +60,7 @@ export default {
     },
 
 
-    _getFlush: (sorted) => {
+    _getFlush: function(sorted)  {
         const suites = {};
         let flush;
         for (const s of sorted) {
@@ -92,7 +92,7 @@ export default {
     },
 
 
-    _getStraight: (source) => {
+    _getStraight: function(source)  {
         function check(card) {
             try {
                 return sorted.find(c => c.idx === card.idx - 1)

@@ -47,6 +47,13 @@ modelSchema.statics.population = [{
 },];
 
 
+modelSchema.methods.cardsOfPlayer = function (player) {
+    if(!player) return [];
+    const site = this.table.siteOfPlayer(player);
+    const potSite = this.pot.sites.find(s=>s.tableSite.equals(site.id));
+    return potSite.cards;
+};
+
 
 modelSchema.methods.playerSumBet = function (player) {
     const bets = this.betsOfPlayer(player);
@@ -153,9 +160,7 @@ modelSchema.virtual('maxBet')
 
 modelSchema.virtual('turnSite')
     .get(function () {
-
         if (!this.pot) return this.table.sitesActive[0];
-        logger.info('WWWWWWWWWWWWWWW', this.pot.round.turn)
         return this.table.sites.id(this.pot.round.turn);
     });
 
@@ -209,7 +214,6 @@ modelSchema.virtual('nextTurn')
         if (!this.pot) return;
         let idx = this.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
         if (idx === this.sitesOfPot.length) idx = 0;
-        logger.info(this.table.sites.map(s=>s.id), this.sitesOfPot[idx].tableSite)
         return this.sitesOfPot[idx].tableSite;
     });
 

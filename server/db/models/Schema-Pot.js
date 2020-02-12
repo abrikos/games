@@ -23,7 +23,6 @@ const potSchema = new Schema({
     toJSON: {virtuals: true}
 });
 
-
 potSchema.virtual('sum')
     .get(function () {
         let sum = 0;

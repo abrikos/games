@@ -21,27 +21,17 @@ async function main() {
     console.log('U2 joined');
     await Poker.bet(table.id, u1, 5);
     //FLOP for 2 players
+    await log(table);
+
 
     await Poker.bet(table.id, u1, 6);
-
     await Poker.bet(table.id, u2, 6);
+    await log(table);
 
-       return
-    console.log('FLOP:')
-    console.log('rize 5:')
-    await Poker.bet(table.id, u1, 5);
-    console.log('fold:')
-    await Poker.bet(table.id, u2, -1);
-    console.log('call 5:')
-    await Poker.bet(table.id, u3, 5);
+    await Poker.bet(table.id, u1, 6);
+    await Poker.bet(table.id, u2, 6);
+    await log(table);
 
-    console.log('TURN:');
-    await Poker.bet(table.id, u1, 5);
-    await Poker.bet(table.id, u3, 5);
-
-    console.log('RIVER:');
-    await Poker.bet(table.id, u1, 5);
-    await Poker.bet(table.id, u3, 5);
 }
 
 
@@ -52,3 +42,7 @@ main()
         Mongoose.close()
     });
 
+async function log(table) {
+    const poker = await Mongoose.poker.findOne({table}).populate('table');
+    logger.info('LOG', poker.pot.sites.map(s=>s.combination))
+}
