@@ -19,16 +19,16 @@ export default class Poker {
         deck = deck.concat(['HQ', 'SQ']);
         deck = deck.concat(['D3', 'S9', 'H8', 'CJ', 'C5']);
         return deck.reverse().map(c => this._card(c));
-        return this._deckStraight.sort(function () {
+        return this._deckSorted.sort(function () {
             return 0.5 - Math.random()
         });
     }
 
     _card(name) {
-        return this._deckStraight.find(c => c.suit + c.value === name);
+        return this._deckSorted.find(c => c.suit + c.value === name);
     }
 
-    get _deckStraight() {
+    get _deckSorted() {
         const d = [];
         for (const suit of this._cards.suits) {
             for (let idx = 0; idx < this._cards.values.length; idx++) {
@@ -85,23 +85,24 @@ export default class Poker {
         return record;
     }*/
 
-    _takeSite({player, record, siteId}) {
-        if (!record.table.sites.find(s => !s.player)) return logger.warn('No sites available');
-        const stake = record.options.blind * 100;
-        let site = record.table.sites.find(s => s.equals(siteId));
-        if (!site) {
-            site = record.table.sites.find(s => !s.player);
-        }
-        site.player = player;
-        site.stake = stake;
-        player.addBalance(-stake);
-        if (record.table.sitesActive.length === 2) {
-            //this._startPot(record);
-            //await this._startGame();
-            //this.logicNextTurn(this.table.sitesActive[0]);
-        }
-        return site;
-    }
+    /*
+        _takeSite({player, record, siteId}) {
+            if (!record.table.sites.find(s => !s.player)) return logger.warn('No sites available');
+            const stake = record.options.blind * 100;
+            let site = record.table.sites.find(s => s.equals(siteId));
+            if (!site) {
+                site = record.table.sites.find(s => !s.player);
+            }
+            site.player = player;
+            site.stake = stake;
+            player.addBalance(-stake);
+            if (record.table.sitesActive.length === 2) {
+                //this._startPot(record);
+                //await this._startGame();
+                //this.logicNextTurn(this.table.sitesActive[0]);
+            }
+            return site;
+        }*/
 
     async onJoin(record) {
         if (record.table.playersCount === 2) {
@@ -114,9 +115,20 @@ export default class Poker {
     }
 
 
-    _startGame(record) {
+    _startGame(record, prevSmallBlind) {
+        logger.info('IIIIIIDD', record.id)
         //if (record.pot) return;
-        const round = {turn: record.table.sitesActive[0], type: this._roundTypes[0].name};
+        //const prevSmallBlind = record.table.sites.find(s => s.firstTurn) || record.table.sites[record.table.sites.length - 1];
+        let smallBlind;
+        if(prevSmallBlind){
+            smallBlind = record.table.sites.find(s => s.player && s.position === (prevSmallBlind.position === record.table.sites.length - 1 ? 0 : prevSmallBlind.position + 1));
+        }else{
+            smallBlind = record.table.sites[0];
+        }
+        const bigBlind = record.table.sites.find(s => s.player && s.position === (smallBlind.position === record.table.sites.length - 1 ? 0 : smallBlind.position + 1));
+
+
+        const round = {turn: smallBlind, type: this._roundTypes[0].name};
         record.pots.push({
             deck: this._deck,
             bets: [],
@@ -133,14 +145,14 @@ export default class Poker {
             site.cards = [c1, c2]
         }
 
-        const site0 = record.table.sites.id(record.pot.sites[0].tableSite);
-        const site1 = record.table.sites.id(record.pot.sites[1].tableSite);
+        //const site0 = record.table.sites.id(record.pot.sites[0].tableSite);
+        //const site1 = record.table.sites.id(record.pot.sites[1].tableSite);
 
-        record.pot.sites[0].blind = 1;
-        record.pot.sites[1].blind = 2;
+        record.pot.sites.find(s => s.tableSite.equals(smallBlind._id)).blind = 1;
+        record.pot.sites.find(s => s.tableSite.equals(bigBlind._id)).blind = 2;
 
-        this._bet(record, site0.player, record.table.options.blind);
-        this._bet(record, site1.player, record.table.options.blind * 2);
+        this._bet(record, smallBlind.player, record.table.options.blind);
+        this._bet(record, bigBlind.player, record.table.options.blind * 2);
     }
 
     _bet(record, player, value) {
@@ -181,7 +193,7 @@ export default class Poker {
         }
 
         this._checkNextRound(record);
-        record.pot.round.turn = record.nextTurn;
+
         await record.save();
         return 'OK';
 
@@ -215,7 +227,8 @@ export default class Poker {
         } else {
             logger.info('NEW ROUND', newRoundType.name);
             record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
-            for(const site of record.pot.sites){
+            record.pot.round.turn = record.nextTurn;
+            for (const site of record.pot.sites) {
                 site.combination = Combination.calc(site.cards, record.pot.round.cards).name
                 //logger.info(record.cardsOfPlayer(site.player))
             }
@@ -227,24 +240,27 @@ export default class Poker {
         return Combination.calc(cards, table)
     }
 
-    _endGame(record) {
+    async _endGame(record) {
         const table = record.pot.rounds[record.pot.rounds.length - 1].cards;
         for (const pot of record.potsOpen) {
             for (const s of pot.sites) {
-                const site = record.table.sites.find(s2 => s2.equals(s));
+                const site = record.table.sites.find(s2 => s2.equals(s.tableSite));
                 //logger.info(site)
-                site.result = Combination.calc(site.data.cards, table)
+                site.result = Combination.calc(s.cards, table)
 
             }
 
-            const winners = this._winners(pot.sites.map(s => record.table.sites.id(s)));
+            const winners = this._winners(pot.sites.map(s => record.table.sites.id(s.tableSite)));
             for (const site of winners) {
                 site.stake += pot.sum / winners.length;
             }
         }
+        const smallBlind = record.table.sites.id(record.pot.sites.find(s => s.blind === 1).tableSite);
         record.pot.closed = true;
         record.active = false;
-        //this._startPot(record)
+        const newRecord = await Mongoose.poker.create({table: record.table});
+
+        this._startGame(newRecord, smallBlind)
     }
 
 
@@ -252,7 +268,7 @@ export default class Poker {
         const maxPriority = sites.sort((b, a) => a.result.priority - b.result.priority)[0].result.priority;
         const tops = sites.filter(c => c.result.priority === maxPriority);
         const name = tops[0].result.name;
-        logger.info(name)
+        logger.info('Winner', name)
         let sum = 0;
         const p = tops[0].result.sum ? 'sum' : 'idx'
         for (const t of tops) {

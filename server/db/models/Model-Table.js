@@ -13,6 +13,7 @@ const siteSchema = new Schema({
     player: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
     stake: {type: Number, default: 0},
     position: {type: Number, default: 0},
+    firstTurn: Boolean,
     result: Object,
 }, {
     toObject: {virtuals: true},
