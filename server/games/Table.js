@@ -40,6 +40,8 @@ export default class Table {
             //const player = position ? null : user;
             table.sites.push({position})
         }
+        table.sites[0].currentTurn = true;
+        table.sites[0].firstTurn = true;
         table.realMode = player.realMode;
 
         //await table.populate(Mongoose.Table.population).execPopulate();

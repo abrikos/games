@@ -14,6 +14,7 @@ const siteSchema = new Schema({
     stake: {type: Number, default: 0},
     position: {type: Number, default: 0},
     firstTurn: Boolean,
+    currentTurn: Boolean,
     result: Object,
 }, {
     toObject: {virtuals: true},
@@ -39,6 +40,11 @@ const modelSchema = new Schema({
 
 modelSchema.statics.population = ['sites.player'];
 
+modelSchema.methods.nextSite = function (site) {
+    if(typeof site != 'object') site = this.sites.id(site);
+    return this.sites.find(s => s.player && s.position === (site.position === this.sites.length - 1 ? 0 : site.position + 1));
+};
+
 modelSchema.methods.siteOfPlayer = function (player) {
     const site = this.sites.find(s => s.player && s.player.equals(player));
 
@@ -47,6 +53,12 @@ modelSchema.methods.siteOfPlayer = function (player) {
     return site;
 
 };
+
+modelSchema.virtual('turnSite')
+    .get(function () {
+        return this.sites.find(s=>s.currentTurn);
+    });
+
 
 modelSchema.virtual('canJoin')
     .get(function () {

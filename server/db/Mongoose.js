@@ -9,7 +9,9 @@ import Table from "server/db/models/Model-Table";
 const mongoose = require("mongoose");
 mongoose.set('useCreateIndex', true);
 // подключение
+console.log('Mongoose connect...');
 mongoose.connect("mongodb://localhost:27017/games", {useNewUrlParser: true, useUnifiedTopology: true});
+console.log('Mongoose connected!');
 //mongoose.connect("mongodb://108.160.143.119:27017/minterEarth", {useNewUrlParser: true});
 
 const Mongoose = {

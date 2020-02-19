@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 
 export default new Schema({
     bets: [betSchema],
-    turn: mongoose.Schema.Types.ObjectId,
+    //turn: mongoose.Schema.Types.ObjectId,
     type: String,
     cards: [cardSchema],
     closed: Boolean

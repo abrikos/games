@@ -158,12 +158,6 @@ modelSchema.virtual('maxBet')
     });
 
 
-modelSchema.virtual('turnSite')
-    .get(function () {
-        if (!this.pot) return this.table.sitesActive[0];
-        return this.table.sites.id(this.pot.round.turn);
-    });
-
 modelSchema.virtual('ftrCards')
     .get(function () {
         if (!this.potLast) return [];
@@ -212,7 +206,8 @@ modelSchema.virtual('nextTurn')
     .get(function () {
 
         if (!this.pot) return;
-        let idx = this.sitesOfPot.map(s => s.toString()).indexOf(this.pot.round.turn.toString()) + 1;
+        let idx = this.sitesOfPot.map(s => s._id.toString()).indexOf(this.pot.round.turn.toString()) + 1;
+        console.log('NEXT turn', idx)
         if (idx === this.sitesOfPot.length) idx = 0;
         return this.sitesOfPot[idx].tableSite;
     });

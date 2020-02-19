@@ -106,7 +106,7 @@ export default class Poker {
 
     async onJoin(record) {
         if (record.table.playersCount === 2) {
-            this._startGame(record);
+            await this._startGame(record);
         }
 
         //this._websocketSend('join', record, player._id);
@@ -115,17 +115,16 @@ export default class Poker {
     }
 
 
-    _startGame(record, prevSmallBlind) {
-        logger.info('IIIIIIDD', record.id)
+    async _startGame(record, smallBlind) {
+        console.log('NEW GAME', record.id)
         //if (record.pot) return;
         //const prevSmallBlind = record.table.sites.find(s => s.firstTurn) || record.table.sites[record.table.sites.length - 1];
-        let smallBlind;
-        if(prevSmallBlind){
-            smallBlind = record.table.sites.find(s => s.player && s.position === (prevSmallBlind.position === record.table.sites.length - 1 ? 0 : prevSmallBlind.position + 1));
-        }else{
+        if(!smallBlind){
             smallBlind = record.table.sites[0];
         }
-        const bigBlind = record.table.sites.find(s => s.player && s.position === (smallBlind.position === record.table.sites.length - 1 ? 0 : smallBlind.position + 1));
+        smallBlind.currentTurn = true;
+        await record.table.save();
+        const bigBlind = record.table.nextSite(smallBlind);
 
 
         const round = {turn: smallBlind, type: this._roundTypes[0].name};
@@ -153,6 +152,7 @@ export default class Poker {
 
         this._bet(record, smallBlind.player, record.table.options.blind);
         this._bet(record, bigBlind.player, record.table.options.blind * 2);
+        return record;
     }
 
     _bet(record, player, value) {
@@ -172,12 +172,17 @@ export default class Poker {
 
     }
 
+    error(e){
+        console.warn(e)
+        return e;
+    }
+
     async bet(id, userId, value) {
 
         const record = await this.getRecord(id);
-        if (!record) return logger.warn('WRONG POKER ID', id)
+        if (!record) return logger.warn('WRONG POKER ID', id);
         const site = record.table.siteOfPlayer(userId);
-        if (!record.turnSite.player.equals(userId)) return (`WARN: ${userId} Not you turn. Bet: ${value}`);
+        if (!record.table.turnSite.player.equals(userId)) return this.error(`WARN: ${site.player.name} Not you turn. Bet: ${value}. (turn of ${record.table.turnSite.player.name})`);
         if (value > site.stake) return (`WARN: Bet ${value} more than stake ${site.stake}`);
 
         if (value >= 0) {
@@ -191,8 +196,17 @@ export default class Poker {
             //FOLD
             record.pot.sites = record.pot.sites.filter(s => !site.equals(s));
         }
+        //Next turn
+        const idx = record.sitesOfPot.map(s=>s.tableSite).indexOf(site._id);
+        const nextPotSite = record.sitesOfPot[idx + 1] || record.sitesOfPot[0];
+        const nextSite = record.table.sites.id(nextPotSite.tableSite);
+        site.currentTurn = false;
+        nextSite.currentTurn = true;
+        logger.info('BET of  ' + site.player.name + ': ' + value + '. NEXT TURN: ' + nextSite.player.name)
+        await record.table.save();
 
-        this._checkNextRound(record);
+        //next round
+        await this._checkNextRound(record);
 
         await record.save();
         return 'OK';
@@ -200,7 +214,7 @@ export default class Poker {
 
     }
 
-    _checkNextRound(record) {
+    async _checkNextRound(record) {
         const values = record.sitesBetSum.map(b => b.sum);
 
         const lastBet = record.lastBet;
@@ -213,21 +227,23 @@ export default class Poker {
         logger.info(record.pot.round.bets.length, pre, record.pot.sites.length, (record.pot.round.bets.length - pre) % record.pot.sites.length)
         */
         if (min === max) {
-            this._nextRound(record)
+            await this._nextRound(record)
         }
     }
 
-    _nextRound(record) {
+    async _nextRound(record) {
         const newRoundType = this._roundTypes[record.pot.rounds.length];
 
         //if (record.pot.round.type === this._roundTypes[this._roundTypes.length - 1].name) {
         if (!newRoundType) {
-            logger.info('FINISH POT');
-            this._endGame(record)
+            console.log('FINISH POT');
+            await this._endGame(record)
         } else {
-            logger.info('NEW ROUND', newRoundType.name);
-            record.pot.rounds.push({turn: record.pot.sites[0], type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
-            record.pot.round.turn = record.nextTurn;
+            console.log('NEW ROUND', newRoundType.name);
+            record.table.sites[0].currentTurn =true;
+            await record.table.save();
+            record.pot.rounds.push({type: newRoundType.name, cards: record.pot.round.cards.concat(record.pot.deck.splice(0, newRoundType.cards))});
+            //record.pot.round.turn = record.nextTurn;
             for (const site of record.pot.sites) {
                 site.combination = Combination.calc(site.cards, record.pot.round.cards).name
                 //logger.info(record.cardsOfPlayer(site.player))
@@ -256,11 +272,14 @@ export default class Poker {
             }
         }
         const smallBlind = record.table.sites.id(record.pot.sites.find(s => s.blind === 1).tableSite);
+        const nextSmallBlind = record.table.nextSite(smallBlind);
         record.pot.closed = true;
         record.active = false;
         const newRecord = await Mongoose.poker.create({table: record.table});
 
-        this._startGame(newRecord, smallBlind)
+        await this._startGame(newRecord, nextSmallBlind);
+        await newRecord.save();
+
     }
 
 
