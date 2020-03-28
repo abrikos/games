@@ -62,6 +62,20 @@ export default class Poker {
         return record;
     }
 
+    async tableInfo(id){
+        const record = await this.getRecord(id);
+        const bets = {};
+        for(const round of record.pot.rounds){
+
+            for(const bet of round.bets){
+                const user = record.table.sites.id(bet.site).player
+                if(!bets[bet.site]) bets[bet.site] = {user, value:0};
+                bets[bet.site].value += bet.value;
+            }
+        }
+        logger.info(bets)
+    }
+
 
     /*async create(table, postBody, player) {
         const record = new Mongoose.poker({table});
@@ -157,24 +171,19 @@ export default class Poker {
 
     _bet(record, player, value) {
         //if (record.logicPlayerBet(value, player)) return;
-
         const site = record.table.siteOfPlayer(player);
-
         const sumBet = record.playerSumBet(player);
-
-        if (record.maxBet > sumBet + value) return logger.warn('Not enough to Call');
-
+        if (record.maxBet > sumBet + value) return {error:'Not enough to Call'};
         site.stake -= value;
         const bet = {value, site};
         //site.bets.push(bet);
-
         record.pot.round.bets.push(bet);
-
+        return {ok:200};
     }
 
-    error(e){
-        console.warn(e)
-        return e;
+    error(error){
+        console.warn(error)
+        return {error};
     }
 
     async bet(id, userId, value) {
@@ -185,16 +194,20 @@ export default class Poker {
         if (!record.table.turnSite.player.equals(userId)) return this.error(`WARN: ${site.player.name} Not you turn. Bet: ${value}. (turn of ${record.table.turnSite.player.name})`);
         if (value > site.stake) return (`WARN: Bet ${value} more than stake ${site.stake}`);
 
+        const result = {status:'Rise', value};
         if (value >= 0) {
-            this._bet(record, userId, value);
+            const bet = this._bet(record, userId, value);
+            if(bet.error) return this.error(bet.error)
             if (site.stake === value) {
                 //All in
                 record.pots.push(record.pot);
                 record.pot.sites = record.pot.sites.filter(s => !site.equals(s));
+                result.status = 'All In';
             }
         } else {
             //FOLD
             record.pot.sites = record.pot.sites.filter(s => !site.equals(s));
+            result.status = 'Fold';
         }
         //Next turn
         const idx = record.sitesOfPot.map(s=>s.tableSite).indexOf(site._id);
@@ -206,30 +219,21 @@ export default class Poker {
         await record.table.save();
 
         //next round
-        await this._checkNextRound(record);
-
-        await record.save();
-        return 'OK';
-
-
-    }
-
-    async _checkNextRound(record) {
         const values = record.sitesBetSum.map(b => b.sum);
-
-        const lastBet = record.lastBet;
-        //const lastSite = record.table.sites.id(lastBet.site);
         const min = Math.min(...values);
         const max = Math.max(...values);
-        /*
-        const pre = record.pot.round.type === 'pre' ? 2 : 0;
-        const finished = !((record.pot.round.bets.length - pre) % record.pot.sites.length)
-        logger.info(record.pot.round.bets.length, pre, record.pot.sites.length, (record.pot.round.bets.length - pre) % record.pot.sites.length)
-        */
         if (min === max) {
-            await this._nextRound(record)
+            await this._nextRound(record);
+            result.status = 'Call';
         }
+
+        await record.save();
+        return result;
+
+
     }
+
+
 
     async _nextRound(record) {
         const newRoundType = this._roundTypes[record.pot.rounds.length];

@@ -21,9 +21,17 @@ async function main() {
     let table = await TABLE.create(abr, 'poker', Mongoose.poker.defaultOptions);
 
     await TABLE.join(table.id, sanya);
-    await Poker.bet(table.id, abr, 6.1);
-    logger.info('TODO: WRONG AMOUNT')
-    await Poker.bet(table.id, sanya, 6);
+    let bet;
+    bet = await Poker.bet(table.id, abr, 6.1);
+    bet = await Poker.bet(table.id, sanya, 1.1);
+
+    bet = await Poker.bet(table.id, abr, 1.2);
+
+    const info = await Poker.tableInfo(table.id)
+    logger.error('TODO: WHY new round?')
+    //bet = await Poker.bet(table.id, sanya, 1.1);
+    logger.info(bet)
+
     return
     //FLOP for 2 players
 
